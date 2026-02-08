@@ -1,0 +1,46 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --pokemon-yellow: #ffcb05;
+  --pokemon-blue: #3c5aa6;
+  --pokemon-dark: #1a1a2e;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply text-stone-900 antialiased font-sans min-h-screen;
+  background-color: #fef3c7; /* warm fallback if image missing */
+  background-image: url("/Cute-Pokemons-Wallpaper.jpg");
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 251, 245, 0.92) 0%,
+    rgba(255, 248, 230, 0.88) 50%,
+    rgba(232, 236, 244, 0.9) 100%
+  );
+  z-index: -1;
+  pointer-events: none;
+}
+
+main {
+  @apply max-w-6xl;
+}
+
+@layer utilities {
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pokemon-blue focus-visible:ring-offset-2;
+  }
+}
