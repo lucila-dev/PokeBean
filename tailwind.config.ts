@@ -1,7 +1,6 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
-  darkMode: "class",
   content: [
     "./pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -45,7 +44,7 @@ const config: Config = {
       fontFamily: {
         display: ["var(--font-nunito)", "system-ui", "sans-serif"],
         sans: ["var(--font-nunito)", "system-ui", "sans-serif"],
-        brand: ["var(--font-fredoka)", "var(--font-quicksand)", "system-ui", "sans-serif"],
+        brand: ["var(--font-quicksand)", "var(--font-nunito)", "system-ui", "sans-serif"],
       },
     },
   },

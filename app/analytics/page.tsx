@@ -100,19 +100,19 @@ export default async function AnalyticsPage() {
 
   return (
     <div>
-      <h1 className="font-display text-3xl font-bold text-pokemon-dark dark:text-stone-100 mb-2">
+      <h1 className="font-display text-3xl font-bold text-pokemon-dark mb-2">
         Analytics
       </h1>
-      <p className="text-stone-600 dark:text-stone-400 mb-8">
+      <p className="text-stone-600 mb-8">
         Insights about your collection over time.
       </p>
 
       {hasNoData ? (
         <Card className="text-center py-16 px-6">
-          <p className="font-medium text-stone-700 dark:text-stone-200 mb-2">
+          <p className="font-medium text-stone-700 mb-2">
             No data yet
           </p>
-          <p className="text-stone-600 dark:text-stone-400 text-sm mb-6 max-w-sm mx-auto">
+          <p className="text-stone-600 text-sm mb-6 max-w-sm mx-auto">
             Add some cards to see charts and stats here.
           </p>
           <Link href="/add">

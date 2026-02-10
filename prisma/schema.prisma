@@ -12,7 +12,6 @@ model User {
   email        String   @unique
   passwordHash String
   name         String?
-  image        String?  // profile picture URL e.g. /uploads/avatars/xxx.jpg
   createdAt    DateTime @default(now())
   cards        Card[]
 }
@@ -27,11 +26,9 @@ model Card {
   year        Int?
   setName     String?
   rarity      String?
-  cardNumber     String?
-  imageUrl       String?
-  marketPrice    Float?   // User-entered (no API); optional
-  priceUpdatedAt DateTime? // When marketPrice was last set/updated
-  createdAt      DateTime @default(now())
+  cardNumber  String?
+  imageUrl    String?
+  createdAt   DateTime @default(now())
 
   @@index([userId])
 }

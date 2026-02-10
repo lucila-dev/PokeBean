@@ -1,11 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
-import { PokeballIcon } from "@/components/PokeballIcon";
-import { useTheme } from "@/components/ThemeProvider";
 
 const protectedLinks = [
   { href: "/dashboard", label: "Dashboard" },
@@ -13,25 +10,9 @@ const protectedLinks = [
   { href: "/analytics", label: "Analytics" },
 ];
 
-function SunIcon() {
-  return (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-    </svg>
-  );
-}
-function MoonIcon() {
-  return (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-    </svg>
-  );
-}
-
 export function Nav() {
   const pathname = usePathname();
   const { data: session, status } = useSession();
-  const { theme, setTheme } = useTheme();
 
   return (
     <nav
@@ -43,10 +24,9 @@ export function Nav() {
         <div className="flex items-center justify-between h-16 min-h-[44px]">
           <Link
             href="/"
-            className="flex items-center gap-2 font-brand font-semibold text-2xl sm:text-3xl tracking-tight text-pokemon-yellow hover:text-pokemon-yellow-light transition-colors focus-ring rounded-button py-2 px-1 shrink-0"
+            className="font-brand font-semibold text-xl tracking-tight text-pokemon-yellow hover:text-pokemon-yellow-light transition-colors focus-ring rounded-button py-2 px-1 shrink-0"
           >
-            <PokeballIcon size={28} className="shrink-0" />
-            <span>PokeBean</span>
+            PokeBean
           </Link>
           <ul className="flex flex-wrap items-center gap-1 sm:gap-2">
             {status === "loading" ? (
@@ -75,45 +55,10 @@ export function Nav() {
                     </li>
                   );
                 })}
-                <li className="flex items-center gap-1 pl-2 border-l border-stone-600">
-                  <button
-                    type="button"
-                    onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                    className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-button text-stone-200 hover:text-pokemon-yellow hover:bg-white/5 focus-ring"
-                    title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-                    aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-                  >
-                    {theme === "dark" ? <SunIcon /> : <MoonIcon />}
-                  </button>
-                  <Link
-                    href="/profile"
-                    aria-current={pathname === "/profile" ? "page" : undefined}
-                    className={`flex items-center gap-2 min-h-[44px] py-2 pr-2 rounded-button focus-ring ${
-                      pathname === "/profile"
-                        ? "bg-pokemon-yellow/20 text-pokemon-yellow font-semibold"
-                        : "text-stone-200 hover:text-pokemon-yellow hover:bg-white/5"
-                    }`}
-                    title="Profile"
-                  >
-                    {session.user?.image ? (
-                      <span className="relative w-8 h-8 rounded-full overflow-hidden border border-stone-500 shrink-0">
-                        <Image
-                          src={session.user.image}
-                          alt=""
-                          width={32}
-                          height={32}
-                          className="object-cover w-full h-full"
-                        />
-                      </span>
-                    ) : (
-                      <span className="w-8 h-8 rounded-full bg-stone-600 flex items-center justify-center text-pokemon-yellow text-sm font-semibold shrink-0">
-                        {(session.user?.name || session.user?.email || "?").slice(0, 1).toUpperCase()}
-                      </span>
-                    )}
-                    <span className="text-sm max-w-[120px] truncate hidden sm:inline" title={session.user?.email ?? undefined}>
-                      {session.user?.name || session.user?.email}
-                    </span>
-                  </Link>
+                <li className="flex items-center gap-2 pl-2 border-l border-stone-600">
+                  <span className="text-stone-300 text-sm max-w-[140px] truncate" title={session.user?.email ?? undefined}>
+                    {session.user?.name || session.user?.email}
+                  </span>
                   <button
                     type="button"
                     onClick={() => signOut({ callbackUrl: "/" })}

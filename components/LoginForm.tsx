@@ -51,7 +51,7 @@ export function LoginForm() {
 
   return (
     <div className="max-w-md mx-auto">
-      <h1 className="font-brand text-2xl font-semibold text-pokemon-dark dark:text-stone-100 mb-6 text-center">
+      <h1 className="font-brand text-2xl font-semibold text-pokemon-dark mb-6 text-center">
         Log in
       </h1>
       {registered && (

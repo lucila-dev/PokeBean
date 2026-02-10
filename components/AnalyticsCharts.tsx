@@ -11,26 +11,19 @@ import {
   Pie,
   Cell,
   Legend,
-  CartesianGrid,
 } from "recharts";
 import { Card, CardTitle } from "@/components/ui/Card";
-import { getRarityColor } from "@/lib/rarityColors";
 
-const PASTEL_COLORS = [
-  "#A8D4E6",
-  "#F5E6A4",
-  "#F8B4C4",
-  "#B8E0C8",
-  "#D4C4E8",
-  "#FFDAB9",
-  "#B8E6D8",
-  "#E0D4F0",
+const CHART_COLORS = [
+  "#3c5aa6", // pokemon blue
+  "#ffcb05", // pokemon yellow
+  "#c7a008", // yellow dark
+  "#5c7cbd", // blue light
+  "#2a4365",
+  "#16a34a", // success
+  "#718096",
+  "#4a5568",
 ];
-
-const BAR_COLOR = "#A8D4E6";
-const GRID_STROKE = "#e7e5e4";
-const AXIS_STROKE = "#a8a29e";
-const TICK_FONT_SIZE = 13;
 
 function formatMonth(monthStr: string) {
   const [y, m] = monthStr.split("-");
@@ -51,9 +44,9 @@ function CustomTooltip({
   const first = payload[0] as { value?: number } | undefined;
   const value = first?.value ?? 0;
   return (
-    <div className="bg-white rounded-lg shadow-md border border-stone-200 px-4 py-3 text-base">
-      <p className="font-semibold text-stone-800 mb-0.5">{label ?? ""}</p>
-      <p className="text-stone-600">{value} {value === 1 ? "card" : "cards"}</p>
+    <div className="bg-white rounded-card shadow-card border border-stone-200 px-3 py-2 text-sm">
+      <p className="font-medium text-stone-800">{label ?? ""}</p>
+      <p className="text-stone-600">{value} cards</p>
     </div>
   );
 }
@@ -76,32 +69,24 @@ export function AnalyticsCharts({
       {byMonth.length > 0 ? (
         <Card className="p-6">
           <CardTitle>Cards added over time</CardTitle>
-          <div className="h-72">
+          <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={byMonth.map((d) => ({ ...d, monthLabel: formatMonth(d.month) }))}
-                margin={{ top: 16, right: 16, left: 8, bottom: 8 }}
+                margin={{ top: 8, right: 8, left: 8, bottom: 8 }}
               >
-                <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} vertical={false} />
                 <XAxis
                   dataKey="monthLabel"
-                  tick={{ fontSize: TICK_FONT_SIZE, fill: AXIS_STROKE }}
+                  tick={{ fontSize: 12 }}
                   tickLine={false}
-                  axisLine={{ stroke: AXIS_STROKE }}
                 />
-                <YAxis
-                  allowDecimals={false}
-                  tick={{ fontSize: TICK_FONT_SIZE, fill: AXIS_STROKE }}
-                  tickLine={false}
-                  axisLine={false}
-                  label={{ value: "Cards", angle: -90, position: "insideLeft", style: { fontSize: 12, fill: AXIS_STROKE } }}
-                />
-                <Tooltip content={(props) => <CustomTooltip {...props} />} cursor={{ fill: "rgba(168, 212, 230, 0.15)" }} />
+                <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
+                <Tooltip content={(props) => <CustomTooltip {...props} />} />
                 <Bar
                   dataKey="count"
-                  fill={BAR_COLOR}
+                  fill={CHART_COLORS[0]}
                   name="Cards"
-                  radius={[6, 6, 0, 0]}
+                  radius={[4, 4, 0, 0]}
                 />
               </BarChart>
             </ResponsiveContainer>
@@ -119,29 +104,17 @@ export function AnalyticsCharts({
       {byYear.length > 0 ? (
         <Card className="p-6">
           <CardTitle>Cards by year</CardTitle>
-          <div className="h-72">
+          <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={byYear} margin={{ top: 16, right: 16, left: 8, bottom: 8 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} vertical={false} />
-                <XAxis
-                  dataKey="year"
-                  tick={{ fontSize: TICK_FONT_SIZE, fill: AXIS_STROKE }}
-                  tickLine={false}
-                  axisLine={{ stroke: AXIS_STROKE }}
-                />
-                <YAxis
-                  allowDecimals={false}
-                  tick={{ fontSize: TICK_FONT_SIZE, fill: AXIS_STROKE }}
-                  tickLine={false}
-                  axisLine={false}
-                  label={{ value: "Cards", angle: -90, position: "insideLeft", style: { fontSize: 12, fill: AXIS_STROKE } }}
-                />
-                <Tooltip content={(props) => <CustomTooltip {...props} />} cursor={{ fill: "rgba(245, 230, 164, 0.2)" }} />
+              <BarChart data={byYear} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
+                <XAxis dataKey="year" tick={{ fontSize: 12 }} tickLine={false} />
+                <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
+                <Tooltip content={(props) => <CustomTooltip {...props} />} />
                 <Bar
                   dataKey="count"
-                  fill={PASTEL_COLORS[1]}
+                  fill={CHART_COLORS[1]}
                   name="Cards"
-                  radius={[6, 6, 0, 0]}
+                  radius={[4, 4, 0, 0]}
                 />
               </BarChart>
             </ResponsiveContainer>
@@ -162,30 +135,22 @@ export function AnalyticsCharts({
               <BarChart
                 data={bySet}
                 layout="vertical"
-                margin={{ left: 8, right: 24, top: 16, bottom: 16 }}
+                margin={{ left: 8, right: 24, top: 8, bottom: 8 }}
               >
-                <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} horizontal={false} />
-                <XAxis
-                  type="number"
-                  allowDecimals={false}
-                  tick={{ fontSize: TICK_FONT_SIZE, fill: AXIS_STROKE }}
-                  tickLine={false}
-                  axisLine={{ stroke: AXIS_STROKE }}
-                />
+                <XAxis type="number" allowDecimals={false} tick={{ fontSize: 12 }} />
                 <YAxis
                   type="category"
                   dataKey="setName"
-                  width={140}
-                  tick={{ fontSize: 12, fill: AXIS_STROKE }}
+                  width={120}
+                  tick={{ fontSize: 11 }}
                   tickLine={false}
-                  axisLine={false}
                 />
-                <Tooltip content={(props) => <CustomTooltip {...props} />} cursor={{ fill: "rgba(248, 180, 196, 0.15)" }} />
+                <Tooltip content={(props) => <CustomTooltip {...props} />} />
                 <Bar
                   dataKey="count"
-                  fill={PASTEL_COLORS[2]}
+                  fill={CHART_COLORS[2]}
                   name="Cards"
-                  radius={[0, 6, 6, 0]}
+                  radius={[0, 4, 4, 0]}
                 />
               </BarChart>
             </ResponsiveContainer>
@@ -210,41 +175,30 @@ export function AnalyticsCharts({
                   nameKey="rarity"
                   cx="50%"
                   cy="50%"
-                  outerRadius="65%"
-                  paddingAngle={2}
+                  outerRadius="70%"
                   label={({ rarity, count }) => `${rarity}: ${count}`}
-                  labelLine={{ stroke: AXIS_STROKE, strokeWidth: 1 }}
+                  labelLine={false}
                 >
-                  {byRarity.map((entry) => (
+                  {byRarity.map((_, i) => (
                     <Cell
-                      key={entry.rarity}
-                      fill={getRarityColor(entry.rarity)}
-                      stroke="white"
-                      strokeWidth={2}
+                      key={i}
+                      fill={CHART_COLORS[i % CHART_COLORS.length]}
                     />
                   ))}
                 </Pie>
                 <Tooltip
                   content={({ active, payload }) =>
                     active && payload?.length ? (
-                      <div className="bg-white rounded-lg shadow-md border border-stone-200 px-4 py-3 text-base">
-                        <p className="font-semibold text-stone-800 mb-0.5">
+                      <div className="bg-white rounded-card shadow-card-hover border border-stone-200 px-3 py-2 text-sm">
+                        <p className="font-medium text-stone-800">
                           {payload[0].name}
                         </p>
-                        <p className="text-stone-600">
-                          {payload[0].value} {Number(payload[0].value) === 1 ? "card" : "cards"}
-                        </p>
+                        <p className="text-stone-600">{payload[0].value} cards</p>
                       </div>
                     ) : null
                   }
                 />
-                <Legend
-                  layout="horizontal"
-                  align="center"
-                  verticalAlign="bottom"
-                  wrapperStyle={{ paddingTop: 16 }}
-                  formatter={(value) => <span className="text-stone-700 text-sm">{value}</span>}
-                />
+                <Legend />
               </PieChart>
             </ResponsiveContainer>
           </div>

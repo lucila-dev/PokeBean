@@ -27,26 +27,12 @@ body::before {
   inset: 0;
   background: linear-gradient(
     135deg,
-    rgba(255, 251, 245, 0.78) 0%,
-    rgba(255, 248, 230, 0.74) 50%,
-    rgba(232, 236, 244, 0.76) 100%
+    rgba(255, 251, 245, 0.92) 0%,
+    rgba(255, 248, 230, 0.88) 50%,
+    rgba(232, 236, 244, 0.9) 100%
   );
   z-index: -1;
   pointer-events: none;
-}
-
-.dark body {
-  @apply text-stone-100;
-  background-color: #0f172a;
-}
-
-.dark body::before {
-  background: linear-gradient(
-    135deg,
-    rgba(15, 23, 42, 0.92) 0%,
-    rgba(30, 41, 59, 0.9) 50%,
-    rgba(26, 26, 46, 0.94) 100%
-  );
 }
 
 main {

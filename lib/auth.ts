@@ -15,7 +15,6 @@ export const authOptions: NextAuthOptions = {
         if (!credentials?.email || !credentials?.password) return null;
         const user = await prisma.user.findUnique({
           where: { email: credentials.email },
-          select: { id: true, email: true, name: true, passwordHash: true },
         });
         if (!user) return null;
         const ok = await compare(credentials.password, user.passwordHash);
@@ -39,25 +38,10 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
     async session({ session, token }) {
-      if (session.user && token.id) {
+      if (session.user) {
         session.user.id = token.id as string;
         session.user.email = token.email as string;
-        session.user.name = (token.name as string | null) ?? null;
-        session.user.image = null;
-        try {
-          const dbUser = await prisma.user.findUnique({
-            where: { id: token.id as string },
-            select: { name: true },
-          });
-          if (dbUser?.name != null) session.user.name = dbUser.name;
-          const dbUserWithImage = await prisma.user.findUnique({
-            where: { id: token.id as string },
-            select: { image: true },
-          }).catch(() => null);
-          if (dbUserWithImage?.image != null) session.user.image = dbUserWithImage.image;
-        } catch {
-          // Keep session with token data only
-        }
+        session.user.name = token.name as string | null;
       }
       return session;
     },
