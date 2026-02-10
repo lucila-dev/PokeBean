@@ -57,10 +57,10 @@ export default async function DashboardPage() {
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
-          <h1 className="font-display text-3xl font-bold text-pokemon-dark">
+          <h1 className="font-display text-3xl font-bold text-pokemon-dark dark:text-stone-100">
             Your collection
           </h1>
-          <p className="text-stone-600 mt-1">
+          <p className="text-stone-600 dark:text-stone-400 mt-1">
             {cards.length === 0
               ? "Scan cards to build your catalog."
               : `${cards.length} card${cards.length !== 1 ? "s" : ""} in your collection.`}
@@ -76,8 +76,8 @@ export default async function DashboardPage() {
       {cards.length === 0 ? (
         <Card className="text-center py-16 px-6">
           <EmptyStateIllustration />
-          <p className="font-medium text-stone-700 mb-2">Your collection is empty</p>
-          <p className="text-stone-600 text-sm mb-6 max-w-sm mx-auto">
+          <p className="font-medium text-stone-700 dark:text-stone-200 mb-2">Your collection is empty</p>
+          <p className="text-stone-600 dark:text-stone-400 text-sm mb-6 max-w-sm mx-auto">
             Take a photo of a Pokemon card and we&apos;ll scan it and add it here.
           </p>
           <Link href="/add">
@@ -96,6 +96,8 @@ export default async function DashboardPage() {
             rarity: c.rarity,
             cardNumber: c.cardNumber,
             imageUrl: c.imageUrl,
+            marketPrice: c.marketPrice ?? null,
+            priceUpdatedAt: c.priceUpdatedAt?.toISOString() ?? null,
             createdAt: c.createdAt.toISOString(),
           }))}
           sets={sets}

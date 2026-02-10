@@ -5,7 +5,6 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
-import { Button } from "@/components/ui/Button";
 
 const PAGE_SIZE = 12;
 
@@ -41,8 +40,20 @@ type CardType = {
   rarity: string | null;
   cardNumber: string | null;
   imageUrl: string | null;
+  marketPrice: number | null;
+  priceUpdatedAt: string | null;
   createdAt: string;
 };
+
+function formatPrice(value: number | null | undefined): string {
+  if (value == null) return "—";
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
+}
 
 type Props = {
   initialCards: CardType[];
@@ -66,7 +77,10 @@ export function DashboardClient({
   const [currentPage, setCurrentPage] = useState(1);
   const [deleting, setDeleting] = useState(false);
   const [viewMode, setViewMode] = useState<"list" | "card">("card");
+  const [selectionMode, setSelectionMode] = useState(false);
   const [detailCard, setDetailCard] = useState<CardType | null>(null);
+  const [priceEditValue, setPriceEditValue] = useState<string>("");
+  const [priceSaving, setPriceSaving] = useState(false);
 
   const filtered = useMemo(() => {
     return initialCards.filter((c) => {
@@ -120,6 +134,11 @@ export function DashboardClient({
       else next.add(id);
       return next;
     });
+  };
+
+  const openDetail = (c: CardType) => {
+    setDetailCard(c);
+    setPriceEditValue(c.marketPrice != null ? String(c.marketPrice) : "");
   };
 
   const toggleSelectAllOnPage = () => {
@@ -296,31 +315,66 @@ export function DashboardClient({
         </div>
       </Card>
 
-      {/* Selection actions bar */}
-      {someSelected && (
-        <div className="mb-4 flex flex-wrap items-center gap-3 rounded-card border border-pokemon-yellow/40 bg-pokemon-yellow/10 px-4 py-3">
-          <span className="text-sm font-medium text-stone-700">
-            {selectedIds.size} selected
-          </span>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="primary"
-              onClick={deleteSelected}
-              disabled={deleting}
-              loading={deleting}
-            >
-              {deleting ? "Deleting…" : "Delete selected"}
-            </Button>
+      {/* Selection bar: enter selection mode + actions when selecting (grouped above content) */}
+      <div
+        className="mb-4 w-fit flex flex-wrap items-center gap-3 rounded-card border border-stone-200 dark:border-stone-600 bg-stone-50/50 dark:bg-stone-800/60 px-4 py-3 transition-colors"
+      >
+        {!selectionMode ? (
+          <button
+            type="button"
+            onClick={() => setSelectionMode(true)}
+            className="text-sm font-medium text-stone-600 hover:text-stone-800 focus-ring rounded-button py-1.5 px-2 border border-stone-300 bg-white"
+          >
+            Select cards
+          </button>
+        ) : (
+          <>
             <button
               type="button"
-              onClick={() => setSelectedIds(new Set())}
-              className="text-sm font-medium text-stone-600 hover:text-stone-800 hover:underline focus-ring rounded-button py-1.5 px-2"
+              onClick={() => {
+                setSelectionMode(false);
+                setSelectedIds(new Set());
+              }}
+              className="text-sm font-medium text-stone-600 hover:text-stone-800 focus-ring rounded-button py-1.5 px-2 border border-stone-300 bg-white"
             >
-              Clear selection
+              Done
             </button>
-          </div>
-        </div>
-      )}
+            {paginated.length > 0 && (
+              <button
+                type="button"
+                onClick={toggleSelectAllOnPage}
+                className="text-sm font-medium text-stone-600 hover:text-stone-800 focus-ring rounded-button py-1.5 px-2 border border-stone-300 bg-white"
+              >
+                {allSelectedOnPage ? "Deselect page" : "Select all on page"}
+              </button>
+            )}
+            {someSelected && (
+              <>
+                <span className="text-sm font-medium text-stone-700">
+                  {selectedIds.size} selected
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={deleteSelected}
+                    disabled={deleting}
+                    className="text-sm font-medium text-stone-600 hover:text-stone-800 focus-ring rounded-button py-1.5 px-2 border border-stone-300 bg-white disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {deleting ? "Deleting…" : "Delete selected"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedIds(new Set())}
+                    className="text-sm font-medium text-stone-600 hover:text-stone-800 focus-ring rounded-button py-1.5 px-2 border border-stone-300 bg-white"
+                  >
+                    Clear selection
+                  </button>
+                </div>
+              </>
+            )}
+          </>
+        )}
+      </div>
 
       {/* Table (list view) */}
       <div className={viewMode === "list" ? "block" : "hidden"}>
@@ -329,15 +383,17 @@ export function DashboardClient({
             <table className="w-full text-left">
               <thead className="bg-stone-50 border-b border-stone-200 sticky top-0 z-10">
                 <tr>
-                  <th className="px-5 py-4 w-12">
-                    <input
-                      type="checkbox"
-                      checked={allSelectedOnPage}
-                      onChange={toggleSelectAllOnPage}
-                      aria-label="Select all on page"
-                      className="rounded border-stone-300 focus-ring w-4 h-4"
-                    />
-                  </th>
+                  {selectionMode && (
+                    <th className="px-5 py-4 w-12">
+                      <input
+                        type="checkbox"
+                        checked={allSelectedOnPage}
+                        onChange={toggleSelectAllOnPage}
+                        aria-label="Select all on page"
+                        className="rounded border-stone-300 focus-ring w-4 h-4"
+                      />
+                    </th>
+                  )}
                   <th className="px-5 py-4 font-semibold text-stone-700 w-24">
                     Image
                   </th>
@@ -354,6 +410,9 @@ export function DashboardClient({
                   </th>
                   <th className="px-5 py-4 font-semibold text-stone-700">No.</th>
                   <th className="px-5 py-4 font-semibold text-stone-700">
+                    Price
+                  </th>
+                  <th className="px-5 py-4 font-semibold text-stone-700">
                     Added
                   </th>
                 </tr>
@@ -366,15 +425,17 @@ export function DashboardClient({
                       i % 2 === 1 ? "bg-stone-50/30" : ""
                     } ${selectedIds.has(c.id) ? "bg-pokemon-yellow/10" : ""}`}
                   >
-                    <td className="px-5 py-4">
-                      <input
-                        type="checkbox"
-                        checked={selectedIds.has(c.id)}
-                        onChange={() => toggleSelect(c.id)}
-                        aria-label={`Select ${getDisplayLabel(c)}`}
-                        className="rounded border-stone-300 focus-ring w-4 h-4"
-                      />
-                    </td>
+                    {selectionMode && (
+                      <td className="px-5 py-4">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(c.id)}
+                          onChange={() => toggleSelect(c.id)}
+                          aria-label={`Select ${getDisplayLabel(c)}`}
+                          className="rounded border-stone-300 focus-ring w-4 h-4"
+                        />
+                      </td>
+                    )}
                     <td className="px-5 py-4 align-top">
                       {c.imageUrl ? (
                         <div className="relative w-16 h-20 rounded-button overflow-hidden bg-stone-100 shrink-0">
@@ -411,6 +472,9 @@ export function DashboardClient({
                     </td>
                     <td className="px-5 py-4 text-stone-600">
                       {c.cardNumber ?? "—"}
+                    </td>
+                    <td className="px-5 py-4 text-stone-600 font-medium tabular-nums">
+                      {formatPrice(c.marketPrice)}
                     </td>
                     <td className="px-5 py-4 text-stone-500 text-sm">
                       {formatDate(c.createdAt)}
@@ -472,19 +536,21 @@ export function DashboardClient({
                 ${selectedIds.has(c.id) ? "ring-2 ring-pokemon-blue" : ""}`}
             >
               <div className="relative flex-1 flex flex-col">
-                <label className="absolute top-2 left-2 z-10 flex items-center gap-1 rounded-full bg-white/95 px-1.5 py-1 shadow-sm backdrop-blur-sm">
-                  <input
-                    type="checkbox"
-                    checked={selectedIds.has(c.id)}
-                    onChange={() => toggleSelect(c.id)}
-                    onClick={(e) => e.stopPropagation()}
-                    aria-label={`Select ${getDisplayLabel(c)}`}
-                    className="rounded border-stone-300 focus-ring w-4 h-4"
-                  />
-                </label>
+                {selectionMode && (
+                  <label className="absolute top-2 left-2 z-10 flex items-center gap-1 rounded-full bg-white/95 px-1.5 py-1 shadow-sm backdrop-blur-sm">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(c.id)}
+                      onChange={() => toggleSelect(c.id)}
+                      onClick={(e) => e.stopPropagation()}
+                      aria-label={`Select ${getDisplayLabel(c)}`}
+                      className="rounded border-stone-300 focus-ring w-4 h-4"
+                    />
+                  </label>
+                )}
                 <button
                   type="button"
-                  onClick={() => setDetailCard(c)}
+                  onClick={() => openDetail(c)}
                   className="block w-full text-left focus:outline-none focus-ring rounded-t-card overflow-hidden"
                   aria-label={`View details for ${getDisplayLabel(c)}`}
                 >
@@ -494,7 +560,7 @@ export function DashboardClient({
                         src={c.imageUrl}
                         alt={getDisplayLabel(c)}
                         fill
-                        className="object-cover object-top transition-transform duration-300 ease-out group-hover:scale-105"
+                        className="object-cover object-top"
                         sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, (min-width: 640px) 50vw, 100vw"
                       />
                     </div>
@@ -512,6 +578,11 @@ export function DashboardClient({
                     {c.setName && <span className="truncate">{c.setName}</span>}
                     {c.rarity && <Badge variant={c.rarity}>{c.rarity}</Badge>}
                   </div>
+                  {c.marketPrice != null && (
+                    <p className="text-sm font-semibold text-pokemon-dark mt-1 tabular-nums">
+                      {formatPrice(c.marketPrice)}
+                    </p>
+                  )}
                 </div>
               </div>
             </Card>
@@ -633,6 +704,77 @@ export function DashboardClient({
                   {formatDate(detailCard.createdAt)}
                 </dd>
               </dl>
+              <div className="mt-4 pt-4 border-t border-stone-200">
+                <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-2">
+                  Market price (optional)
+                </h3>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-stone-600">$</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={priceEditValue}
+                    onChange={(e) => setPriceEditValue(e.target.value)}
+                    placeholder="0.00"
+                    className="rounded-input border border-stone-300 bg-white px-3 py-2 w-24 text-pokemon-dark tabular-nums focus:ring-2 focus:ring-pokemon-yellow focus:border-pokemon-yellow"
+                    aria-label="Market price in USD"
+                  />
+                  <button
+                    type="button"
+                    disabled={priceSaving}
+                    onClick={async () => {
+                      if (!detailCard) return;
+                      const num =
+                        priceEditValue.trim() === ""
+                          ? null
+                          : parseFloat(priceEditValue);
+                      if (
+                        num !== null &&
+                        (Number.isNaN(num) || num < 0)
+                      )
+                        return;
+                      setPriceSaving(true);
+                      try {
+                        const res = await fetch(`/api/cards/${detailCard.id}`, {
+                          method: "PATCH",
+                          headers: {
+                            "Content-Type": "application/json",
+                          },
+                          body: JSON.stringify({
+                            marketPrice: num,
+                          }),
+                        });
+                        if (!res.ok) throw new Error("Failed to update");
+                        const updated = await res.json();
+                        setDetailCard({
+                          ...detailCard,
+                          marketPrice: updated.marketPrice ?? null,
+                          priceUpdatedAt:
+                            updated.priceUpdatedAt ?? detailCard.priceUpdatedAt,
+                        });
+                        setPriceEditValue(
+                          updated.marketPrice != null
+                            ? String(updated.marketPrice)
+                            : ""
+                        );
+                      } finally {
+                        setPriceSaving(false);
+                      }
+                      router.refresh();
+                    }}
+                    className="rounded-button px-3 py-2 text-sm font-medium bg-pokemon-yellow text-pokemon-dark hover:bg-pokemon-yellow/90 focus-ring disabled:opacity-50"
+                  >
+                    {priceSaving ? "Saving…" : "Save price"}
+                  </button>
+                </div>
+                {detailCard.priceUpdatedAt && (
+                  <p className="text-xs text-stone-500 mt-1">
+                    Last updated{" "}
+                    {formatDate(detailCard.priceUpdatedAt)}
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -651,19 +793,21 @@ export function DashboardClient({
                 ${selectedIds.has(c.id) ? "ring-2 ring-pokemon-blue" : ""}`}
             >
               <div className="relative flex flex-col">
-                <label className="absolute top-1.5 left-1.5 z-10 flex items-center rounded-full bg-white/95 px-1 py-0.5 shadow backdrop-blur-sm">
-                  <input
-                    type="checkbox"
-                    checked={selectedIds.has(c.id)}
-                    onChange={() => toggleSelect(c.id)}
-                    onClick={(e) => e.stopPropagation()}
-                    aria-label={`Select ${getDisplayLabel(c)}`}
-                    className="rounded border-stone-300 w-3.5 h-3.5"
-                  />
-                </label>
+                {selectionMode && (
+                  <label className="absolute top-1.5 left-1.5 z-10 flex items-center rounded-full bg-white/95 px-1 py-0.5 shadow backdrop-blur-sm">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(c.id)}
+                      onChange={() => toggleSelect(c.id)}
+                      onClick={(e) => e.stopPropagation()}
+                      aria-label={`Select ${getDisplayLabel(c)}`}
+                      className="rounded border-stone-300 w-3.5 h-3.5"
+                    />
+                  </label>
+                )}
                 <button
                   type="button"
-                  onClick={() => setDetailCard(c)}
+                  onClick={() => openDetail(c)}
                   className="block w-full text-left focus:outline-none rounded-t-card overflow-hidden"
                   aria-label={`View details for ${getDisplayLabel(c)}`}
                 >
@@ -673,7 +817,7 @@ export function DashboardClient({
                         src={c.imageUrl}
                         alt={getDisplayLabel(c)}
                         fill
-                        className="object-cover object-top transition-transform duration-300 ease-out group-hover:scale-105"
+                        className="object-cover object-top"
                         sizes="50vw"
                       />
                     </div>
@@ -692,6 +836,11 @@ export function DashboardClient({
                       <Badge variant={c.rarity}>{c.rarity}</Badge>
                     )}
                   </div>
+                  {c.marketPrice != null && (
+                    <p className="text-xs font-semibold text-pokemon-dark mt-1 tabular-nums">
+                      {formatPrice(c.marketPrice)}
+                    </p>
+                  )}
                 </div>
               </div>
             </Card>

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Nunito, Quicksand } from "next/font/google";
+import { Nunito, Quicksand, Fredoka } from "next/font/google";
 import "./globals.css";
 import { Nav } from "@/components/Nav";
 import { Providers } from "@/components/Providers";
@@ -15,6 +15,13 @@ const quicksand = Quicksand({
   variable: "--font-quicksand",
   display: "swap",
   weight: ["500", "600", "700"],
+});
+
+const fredoka = Fredoka({
+  subsets: ["latin"],
+  variable: "--font-fredoka",
+  display: "swap",
+  weight: ["400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -36,8 +43,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${nunito.variable} ${quicksand.variable}`}>
-      <body className="min-h-screen flex flex-col font-sans">
+    <html lang="en" className={`${nunito.variable} ${quicksand.variable} ${fredoka.variable}`} suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){var t=localStorage.getItem('pokebean-theme');if(t==='dark')document.documentElement.classList.add('dark');else document.documentElement.classList.remove('dark');})();`,
+          }}
+        />
+      </head>
+      <body className="min-h-screen flex flex-col font-sans bg-stone-50 dark:bg-transparent text-stone-900 dark:text-stone-100">
         <Providers>
           <Nav />
           <main className="flex-1 w-full container mx-auto px-4 py-8 relative">
