@@ -1,52 +1,43 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { PokeballIcon } from "@/components/PokeballIcon";
 
 export default function HomePage() {
   return (
     <div className="max-w-2xl mx-auto">
       <div className="text-center mb-12">
-        <h1 className="font-brand text-4xl font-semibold text-pokemon-dark mb-4">
-          PokeBean
+        <h1 className="font-brand text-7xl sm:text-8xl font-semibold text-pokemon-dark dark:text-stone-100 mb-4 flex items-center justify-center gap-4 flex-wrap">
+          <span className="w-14 h-14 sm:w-20 sm:h-20 shrink-0 inline-flex items-center justify-center">
+            <PokeballIcon className="w-full h-full" />
+          </span>
+          <span>PokeBean</span>
         </h1>
-        <p className="text-xl text-stone-600">
-          Scan, catalog, and analyze your Pokemon TCG cards in one place.
+        <p className="text-2xl text-stone-600 dark:text-stone-400">
+          Keep your card collection in one place.
         </p>
       </div>
 
       <Card className="p-8 mb-8">
-        <h2 className="font-display text-xl font-semibold text-pokemon-dark mb-4">
-          What this app does
+        <h2 className="font-display text-2xl font-semibold text-pokemon-dark dark:text-stone-100 mb-5">
+          What you can do
         </h2>
-        <ul className="space-y-4 text-stone-700">
+        <ul className="space-y-4 text-stone-700 dark:text-stone-300 text-lg leading-relaxed">
           <li className="flex gap-3">
             <span className="text-pokemon-yellow font-bold shrink-0">1.</span>
-            <span>
-              <strong>Scan cards with your camera.</strong> Take a photo of any Pokemon card
-              and the app uses AI to read the name, set, number, rarity, and description.
-            </span>
+            <span><strong>Add cards with a photo</strong> — name, set, number, and rarity are saved automatically.</span>
           </li>
           <li className="flex gap-3">
             <span className="text-pokemon-yellow font-bold shrink-0">2.</span>
-            <span>
-              <strong>Store your collection.</strong> Every scanned card is saved with a
-              clear, unique name (TCGPlayer-style) so you can tell different printings apart.
-            </span>
+            <span><strong>Save and organize</strong> — each card is stored with clear details so you can tell printings apart.</span>
           </li>
           <li className="flex gap-3">
             <span className="text-pokemon-yellow font-bold shrink-0">3.</span>
-            <span>
-              <strong>Browse and search.</strong> View your cards in a table or card layout,
-              filter by set or rarity, search by name or description, and delete cards you no
-              longer have.
-            </span>
+            <span><strong>Browse and search</strong> — view as table or cards, filter by set or rarity, and remove cards you don’t have.</span>
           </li>
           <li className="flex gap-3">
             <span className="text-pokemon-yellow font-bold shrink-0">4.</span>
-            <span>
-              <strong>See analytics.</strong> Charts show how many cards you have per set,
-              per year, and by rarity, plus how your collection has grown over time.
-            </span>
+            <span><strong>See your stats</strong> — charts by set, year, and rarity, plus how your collection grows.</span>
           </li>
         </ul>
       </Card>
