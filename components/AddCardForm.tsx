@@ -171,11 +171,7 @@ export function AddCardForm() {
       <p className="text-stone-600 dark:text-stone-400 mb-8">
         Drop a photo of your Pokemon card here or browse to upload. We&apos;ll
         use AI to read the name, set, year, and rarity, then add it to your
-        collection. Or{" "}
-        <Link href="/browse" className="text-pokemon-blue dark:text-pokemon-yellow hover:underline font-medium">
-          search the catalog
-        </Link>{" "}
-        to add a card without a photo.
+        collection.
       </p>
 
       <div

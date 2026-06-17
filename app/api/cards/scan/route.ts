@@ -60,7 +60,6 @@ export async function POST(request: NextRequest) {
         setName: extracted.setName ?? null,
         rarity: extracted.rarity ?? null,
         cardNumber: extracted.cardNumber ?? null,
-        source: "scan",
       },
     });
 

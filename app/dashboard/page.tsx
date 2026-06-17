@@ -78,16 +78,11 @@ export default async function DashboardPage() {
           <EmptyStateIllustration />
           <p className="font-medium text-stone-700 dark:text-stone-200 mb-2">Your collection is empty</p>
           <p className="text-stone-600 dark:text-stone-400 text-sm mb-6 max-w-sm mx-auto">
-            Scan a photo or search the catalog to add cards to your collection.
+            Take a photo of a Pokemon card and we&apos;ll scan it and add it here.
           </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link href="/browse">
-              <Button variant="secondary">Browse catalog</Button>
-            </Link>
-            <Link href="/add">
-              <Button variant="primary">Scan your first card</Button>
-            </Link>
-          </div>
+          <Link href="/add">
+            <Button variant="primary">Scan your first card</Button>
+          </Link>
         </Card>
       ) : (
         <DashboardClient

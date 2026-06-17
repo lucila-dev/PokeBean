@@ -5,8 +5,6 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
-import { getDisplayLabel, isCatalogImageUrl } from "@/lib/cardFormat";
-import { CardDetailMetadata, CardDetailTitle } from "@/components/CardDetailMetadata";
 
 const PAGE_SIZE = 12;
 
@@ -16,6 +14,20 @@ function formatDate(iso: string) {
     month: "numeric",
     day: "numeric",
   });
+}
+
+function getDisplayLabel(c: CardType): string {
+  if (c.displayName?.trim()) return c.displayName;
+  const name = c.name?.trim() || "Unknown";
+  const set = c.setName?.trim();
+  const num = c.cardNumber?.trim();
+  if (set && num) {
+    return num.includes("/")
+      ? `${name} — ${set} (${num})`
+      : `${name} (${num}) — ${set}`;
+  }
+  if (set) return `${name} — ${set}`;
+  return num ? `${name} (${num})` : name;
 }
 
 type CardType = {
@@ -431,7 +443,6 @@ export function DashboardClient({
                             src={c.imageUrl}
                             alt={getDisplayLabel(c)}
                             fill
-                            unoptimized={isCatalogImageUrl(c.imageUrl)}
                             className="object-cover"
                             sizes="64px"
                           />
@@ -549,7 +560,6 @@ export function DashboardClient({
                         src={c.imageUrl}
                         alt={getDisplayLabel(c)}
                         fill
-                        unoptimized={isCatalogImageUrl(c.imageUrl)}
                         className="object-cover object-top"
                         sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, (min-width: 640px) 50vw, 100vw"
                       />
@@ -627,7 +637,9 @@ export function DashboardClient({
           >
             <div className="p-6">
               <div className="flex items-start justify-between gap-4 mb-4">
-                <CardDetailTitle card={detailCard} />
+                <h2 className="font-display font-semibold text-lg text-pokemon-dark pr-8">
+                  {getDisplayLabel(detailCard)}
+                </h2>
                 <button
                   type="button"
                   onClick={() => setDetailCard(null)}
@@ -643,13 +655,55 @@ export function DashboardClient({
                     src={detailCard.imageUrl}
                     alt={getDisplayLabel(detailCard)}
                     fill
-                    unoptimized={isCatalogImageUrl(detailCard.imageUrl)}
                     className="object-cover object-top"
                     sizes="240px"
                   />
                 </div>
               )}
-              <CardDetailMetadata card={detailCard} showAdded />
+              {detailCard.description && (
+                <div className="mb-4">
+                  <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-1">
+                    Description
+                  </h3>
+                  <p className="text-stone-700 text-sm whitespace-pre-wrap">
+                    {detailCard.description}
+                  </p>
+                </div>
+              )}
+              <dl className="grid grid-cols-2 gap-2 text-sm">
+                {detailCard.setName && (
+                  <>
+                    <dt className="text-stone-500">Set</dt>
+                    <dd className="text-stone-800">{detailCard.setName}</dd>
+                  </>
+                )}
+                {detailCard.year != null && (
+                  <>
+                    <dt className="text-stone-500">Year</dt>
+                    <dd className="text-stone-800">{detailCard.year}</dd>
+                  </>
+                )}
+                {detailCard.rarity && (
+                  <>
+                    <dt className="text-stone-500">Rarity</dt>
+                    <dd>
+                      <Badge variant={detailCard.rarity}>
+                        {detailCard.rarity}
+                      </Badge>
+                    </dd>
+                  </>
+                )}
+                {detailCard.cardNumber && (
+                  <>
+                    <dt className="text-stone-500">Number</dt>
+                    <dd className="text-stone-800">{detailCard.cardNumber}</dd>
+                  </>
+                )}
+                <dt className="text-stone-500">Added</dt>
+                <dd className="text-stone-800">
+                  {formatDate(detailCard.createdAt)}
+                </dd>
+              </dl>
               <div className="mt-4 pt-4 border-t border-stone-200">
                 <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-2">
                   Market price (optional)
@@ -763,7 +817,6 @@ export function DashboardClient({
                         src={c.imageUrl}
                         alt={getDisplayLabel(c)}
                         fill
-                        unoptimized={isCatalogImageUrl(c.imageUrl)}
                         className="object-cover object-top"
                         sizes="50vw"
                       />

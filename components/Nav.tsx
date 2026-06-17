@@ -9,7 +9,6 @@ import { useTheme } from "@/components/ThemeProvider";
 
 const protectedLinks = [
   { href: "/dashboard", label: "Dashboard" },
-  { href: "/browse", label: "Browse" },
   { href: "/add", label: "Add Card" },
   { href: "/analytics", label: "Analytics" },
 ];

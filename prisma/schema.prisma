@@ -29,12 +29,9 @@ model Card {
   rarity      String?
   cardNumber     String?
   imageUrl       String?
-  catalogId      String?  // Pokemon TCG API id when added from catalog
-  source         String?  // "scan" | "catalog"
   marketPrice    Float?   // User-entered (no API); optional
   priceUpdatedAt DateTime? // When marketPrice was last set/updated
   createdAt      DateTime @default(now())
 
   @@index([userId])
-  @@index([userId, catalogId])
 }
