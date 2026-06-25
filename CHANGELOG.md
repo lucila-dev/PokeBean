@@ -8,3 +8,4 @@ Project history for PokeBean.
 - 2026-05-12: Dashboard stats and filtering updates
 - 2026-05-30: Responsive layout and nav improvements
 - 2026-06-04: Dark mode contrast and theme cleanup
+- 2026-06-25: Pre-release docs and config cleanup
