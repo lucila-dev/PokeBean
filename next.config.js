@@ -1,4 +1,17 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {};
+const nextConfig = {
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "images.pokemontcg.io",
+      },
+      {
+        protocol: "https",
+        hostname: "images.scrydex.com",
+      },
+    ],
+  },
+};
 
 module.exports = nextConfig;

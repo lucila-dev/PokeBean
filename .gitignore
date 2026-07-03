@@ -34,6 +34,7 @@ yarn-error.log*
 # ide
 .idea
 .vscode
+tsconfig.tsbuildinfo
 
 # uploaded card images (remove this line if you want to commit them)
 /public/uploads/*
