@@ -1,76 +1,63 @@
-# PostgreSQL setup for PokeBean
+# Supabase setup for PokeBean
 
-The app uses PostgreSQL. Easiest option: use a **free cloud database** (no install).
+Use this for Vercel (production). Local dev can keep using Postgres on your Mac, or point at Supabase too.
 
----
+## 1. Create a Supabase project
 
-## Option A: Neon (recommended, free)
+1. Go to [supabase.com](https://supabase.com) and sign in
+2. **New project** → pick a name (e.g. `pokebean`) and a database password (save it)
+3. Wait until the project finishes provisioning
 
-1. Go to **[neon.tech](https://neon.tech)** and sign up (free).
-2. Create a new project (e.g. name: `pokemon-dashboard`).
-3. In the dashboard, open **Connection details** and copy the connection string. It looks like:
-   ```txt
-   postgresql://user:password@ep-xxx.region.aws.neon.tech/neondb?sslmode=require
-   ```
-4. Paste it into your `.env` as `DATABASE_URL`:
-   ```env
-   DATABASE_URL="postgresql://user:password@ep-xxx.region.aws.neon.tech/neondb?sslmode=require"
-   ```
-5. In the project root, run:
-   ```bash
-   npx prisma migrate dev
-   ```
-   When prompted for a migration name, you can use `init` or press Enter.
-6. Start the app: `npm run dev`.
+## 2. Copy connection strings
 
----
+1. In Supabase: **Project Settings** → **Database**
+2. Under **Connection string**, choose **URI**
+3. Copy the **Transaction pooler** string (port **6543**) → this is `DATABASE_URL`
+   - Add `?pgbouncer=true` at the end if it is not already there
+4. Copy the **Session pooler** or **Direct** string (port **5432**) → this is `DIRECT_URL`
 
-## Option B: Supabase (free)
+Replace `[YOUR-PASSWORD]` with your database password.
 
-1. Go to **[supabase.com](https://supabase.com)** and create a project.
-2. In the project: **Settings → Database** → copy the **URI** (connection string).
-3. Put it in `.env` as `DATABASE_URL` (use the **Session mode** URI; it includes the password).
-4. Run:
-   ```bash
-   npx prisma migrate dev
-   ```
-5. Start the app: `npm run dev`.
+Example:
 
----
+```
+DATABASE_URL="postgresql://postgres.xxxxx:YOUR-PASSWORD@aws-0-eu-west-1.pooler.supabase.com:6543/postgres?pgbouncer=true"
+DIRECT_URL="postgresql://postgres.xxxxx:YOUR-PASSWORD@aws-0-eu-west-1.pooler.supabase.com:5432/postgres"
+```
 
-## Option C: Local PostgreSQL
+## 3. Add env vars on Vercel
 
-If you prefer running Postgres on your Mac:
+Vercel → your project → **Settings** → **Environment Variables**. Add:
 
-1. **Install** (fix Homebrew permissions first if needed):
-   ```bash
-   brew install postgresql@16
-   brew link postgresql@16
-   ```
-2. **Start** Postgres:
-   ```bash
-   brew services start postgresql@16
-   ```
-3. **Create a database**:
-   ```bash
-   createdb pokemon_dashboard
-   ```
-4. In `.env`:
-   ```env
-   DATABASE_URL="postgresql://localhost:5432/pokemon_dashboard"
-   ```
-   If your Mac user has a Postgres password, use:
-   `postgresql://YOUR_USER:YOUR_PASSWORD@localhost:5432/pokemon_dashboard`
-5. Run migrations and start the app:
-   ```bash
-   npx prisma migrate dev
-   npm run dev
-   ```
+| Variable | Value |
+|----------|--------|
+| `DATABASE_URL` | Transaction pooler URI (6543) |
+| `DIRECT_URL` | Direct / session URI (5432) |
+| `NEXTAUTH_SECRET` | Run `openssl rand -base64 32` |
+| `OPENAI_API_KEY` | Your OpenAI key |
+| `POKEWALLET_API_KEY` | Your PokeWallet key |
 
----
+Apply to **Production**, **Preview**, and **Development**.
 
-After any option, you can open **Prisma Studio** to view data:
+## 4. Redeploy
+
+**Deployments** → latest deploy → **⋯** → **Redeploy**
+
+The build runs `prisma migrate deploy` and creates the `User` and `Card` tables automatically.
+
+## 5. Create your account on production
+
+Your local database and Supabase are separate. On `https://poke-bean.vercel.app`:
+
+1. Open **Register**
+2. Create a new account
+3. Log in
+
+## Optional: use Supabase locally
+
+Put the same `DATABASE_URL` and `DIRECT_URL` in your local `.env`, then:
 
 ```bash
-npm run db:studio
+npx prisma migrate deploy
+npm run dev
 ```
