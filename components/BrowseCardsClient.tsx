@@ -391,7 +391,7 @@ export function BrowseCardsClient({ ownedCatalogCards: initialOwned }: Props) {
   };
 
   const inputBase =
-    "w-full rounded-input border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2.5 text-sm text-stone-700 dark:text-stone-200 focus-ring min-h-[44px] transition-colors hover:border-stone-400 dark:hover:border-stone-500";
+    "w-full rounded-input border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-900 px-3 py-2.5 text-sm text-stone-700 dark:text-stone-200 focus-ring min-h-[44px] transition-colors hover:border-stone-400 dark:hover:border-stone-500";
 
   const initialLoading = loading && cards.length === 0;
 
@@ -532,7 +532,7 @@ export function BrowseCardsClient({ ownedCatalogCards: initialOwned }: Props) {
           onClick={() => setDetailCard(null)}
         >
           <div
-            className="bg-white dark:bg-stone-800/90 rounded-card shadow-card max-w-lg w-full max-h-[90vh] overflow-y-auto"
+            className="bg-white dark:bg-stone-900 rounded-card shadow-card border border-stone-200 dark:border-stone-700 max-w-lg w-full max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="p-6">

@@ -297,7 +297,7 @@ export function AddCardForm() {
               {savedCards.length === 1 ? "Card saved" : `${savedCards.length} cards saved`}
             </h2>
           </div>
-          <ul className="bg-white rounded-card shadow-card p-4 mb-6 space-y-2 max-h-48 overflow-y-auto">
+          <ul className="bg-white dark:bg-stone-900 rounded-card shadow-card border border-stone-200 dark:border-stone-700 p-4 mb-6 space-y-2 max-h-48 overflow-y-auto">
             {savedCards.map((c) => (
               <li key={c.id} className="text-sm">
                 <p className="font-medium text-pokemon-dark">

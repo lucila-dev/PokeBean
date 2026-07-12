@@ -1,3 +1,4 @@
+import "@/lib/auth-env";
 import { withAuth } from "next-auth/middleware";
 
 export default withAuth({

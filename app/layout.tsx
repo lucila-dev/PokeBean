@@ -51,7 +51,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="min-h-screen flex flex-col font-sans bg-stone-50 dark:bg-transparent text-stone-900 dark:text-stone-100">
+      <body className="min-h-screen flex flex-col font-sans bg-stone-50 dark:bg-slate-950 text-stone-900 dark:text-stone-100">
         <Providers>
           <Nav />
           <main className="flex-1 w-full container mx-auto px-4 py-8 relative">

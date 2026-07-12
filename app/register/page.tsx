@@ -74,7 +74,7 @@ export default function RegisterPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               autoComplete="email"
-              className="w-full border border-stone-300 rounded-lg px-3 py-2 text-pokemon-dark focus:ring-2 focus:ring-pokemon-yellow focus:border-pokemon-yellow"
+              className="w-full border border-stone-300 dark:border-stone-600 rounded-lg px-3 py-2 bg-white dark:bg-stone-900 text-pokemon-dark dark:text-stone-100 focus:ring-2 focus:ring-pokemon-yellow focus:border-pokemon-yellow"
               required
             />
           </div>
@@ -88,7 +88,7 @@ export default function RegisterPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="new-password"
-              className="w-full border border-stone-300 rounded-lg px-3 py-2 text-pokemon-dark focus:ring-2 focus:ring-pokemon-yellow focus:border-pokemon-yellow"
+              className="w-full border border-stone-300 dark:border-stone-600 rounded-lg px-3 py-2 bg-white dark:bg-stone-900 text-pokemon-dark dark:text-stone-100 focus:ring-2 focus:ring-pokemon-yellow focus:border-pokemon-yellow"
               required
               minLength={8}
             />
@@ -104,7 +104,7 @@ export default function RegisterPage() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               autoComplete="name"
-              className="w-full border border-stone-300 rounded-lg px-3 py-2 text-pokemon-dark focus:ring-2 focus:ring-pokemon-yellow focus:border-pokemon-yellow"
+              className="w-full border border-stone-300 dark:border-stone-600 rounded-lg px-3 py-2 bg-white dark:bg-stone-900 text-pokemon-dark dark:text-stone-100 focus:ring-2 focus:ring-pokemon-yellow focus:border-pokemon-yellow"
             />
           </div>
           <Button type="submit" variant="primary" disabled={loading} className="w-full">

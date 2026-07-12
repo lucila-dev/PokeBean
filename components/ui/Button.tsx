@@ -14,7 +14,7 @@ const variantStyles: Record<
   primary:
     "bg-pokemon-yellow text-pokemon-dark hover:bg-pokemon-yellow-dark shadow-sm font-semibold",
   secondary:
-    "bg-white dark:bg-stone-700 border-2 border-stone-300 dark:border-stone-600 text-stone-700 dark:text-stone-200 hover:bg-stone-50 dark:hover:bg-stone-600 hover:border-stone-400 dark:hover:border-stone-500",
+    "bg-white dark:bg-stone-800 border-2 border-stone-300 dark:border-stone-600 text-stone-700 dark:text-stone-200 hover:bg-stone-50 dark:hover:bg-stone-700 hover:border-stone-400 dark:hover:border-stone-500",
   ghost:
     "bg-transparent text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-700 hover:text-stone-900 dark:hover:text-stone-100",
 };

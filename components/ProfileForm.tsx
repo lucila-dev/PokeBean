@@ -124,7 +124,7 @@ export function ProfileForm({ initialName, initialImageUrl }: Props) {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Your name"
-              className="flex-1 rounded-input border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-700 px-3 py-2 text-stone-800 dark:text-stone-100 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-pokemon-blue focus:border-transparent"
+              className="flex-1 rounded-input border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-900 px-3 py-2 text-stone-800 dark:text-stone-100 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-pokemon-blue focus:border-transparent"
             />
             <Button
               onClick={saveName}

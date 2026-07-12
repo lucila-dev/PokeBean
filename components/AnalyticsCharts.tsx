@@ -14,20 +14,8 @@ import {
   CartesianGrid,
 } from "recharts";
 import { Card, CardTitle } from "@/components/ui/Card";
-import { getRarityColor } from "@/lib/rarityColors";
+import { getChartColor, getRarityColor } from "@/lib/rarityColors";
 
-const PASTEL_COLORS = [
-  "#A8D4E6",
-  "#F5E6A4",
-  "#F8B4C4",
-  "#B8E0C8",
-  "#D4C4E8",
-  "#FFDAB9",
-  "#B8E6D8",
-  "#E0D4F0",
-];
-
-const BAR_COLOR = "#A8D4E6";
 const GRID_STROKE = "#e7e5e4";
 const AXIS_STROKE = "#a8a29e";
 const TICK_FONT_SIZE = 13;
@@ -48,12 +36,14 @@ function CustomTooltip({
   label?: string;
 }) {
   if (!active || !payload?.length) return null;
-  const first = payload[0] as { value?: number } | undefined;
+  const first = payload[0] as { value?: number; payload?: { fill?: string } } | undefined;
   const value = first?.value ?? 0;
   return (
-    <div className="bg-white rounded-lg shadow-md border border-stone-200 px-4 py-3 text-base">
-      <p className="font-semibold text-stone-800 mb-0.5">{label ?? ""}</p>
-      <p className="text-stone-600">{value} {value === 1 ? "card" : "cards"}</p>
+    <div className="bg-white dark:bg-stone-900 rounded-lg shadow-md border border-stone-200 dark:border-stone-700 px-4 py-3 text-base text-stone-800 dark:text-stone-100">
+      <p className="font-semibold text-stone-800 dark:text-stone-100 mb-0.5">{label ?? ""}</p>
+      <p className="text-stone-600 dark:text-stone-300">
+        {value} {value === 1 ? "card" : "cards"}
+      </p>
     </div>
   );
 }
@@ -74,7 +64,7 @@ export function AnalyticsCharts({
   return (
     <div className="space-y-10">
       {byMonth.length > 0 ? (
-        <Card className="p-6">
+        <Card className="p-6 overflow-visible">
           <CardTitle>Cards added over time</CardTitle>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
@@ -94,15 +84,19 @@ export function AnalyticsCharts({
                   tick={{ fontSize: TICK_FONT_SIZE, fill: AXIS_STROKE }}
                   tickLine={false}
                   axisLine={false}
-                  label={{ value: "Cards", angle: -90, position: "insideLeft", style: { fontSize: 12, fill: AXIS_STROKE } }}
+                  label={{
+                    value: "Cards",
+                    angle: -90,
+                    position: "insideLeft",
+                    style: { fontSize: 12, fill: AXIS_STROKE },
+                  }}
                 />
-                <Tooltip content={(props) => <CustomTooltip {...props} />} cursor={{ fill: "rgba(168, 212, 230, 0.15)" }} />
-                <Bar
-                  dataKey="count"
-                  fill={BAR_COLOR}
-                  name="Cards"
-                  radius={[6, 6, 0, 0]}
-                />
+                <Tooltip content={(props) => <CustomTooltip {...props} />} cursor={{ fill: "rgba(59, 130, 246, 0.12)" }} />
+                <Bar dataKey="count" name="Cards" radius={[6, 6, 0, 0]}>
+                  {byMonth.map((entry, index) => (
+                    <Cell key={entry.month} fill={getChartColor(index, entry.month)} />
+                  ))}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -110,14 +104,12 @@ export function AnalyticsCharts({
       ) : (
         <Card className="p-6">
           <CardTitle>Cards added over time</CardTitle>
-          <p className="text-stone-500 text-sm py-8 text-center">
-            No data yet
-          </p>
+          <p className="text-stone-500 text-sm py-8 text-center">No data yet</p>
         </Card>
       )}
 
       {byYear.length > 0 ? (
-        <Card className="p-6">
+        <Card className="p-6 overflow-visible">
           <CardTitle>Cards by year</CardTitle>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
@@ -134,15 +126,19 @@ export function AnalyticsCharts({
                   tick={{ fontSize: TICK_FONT_SIZE, fill: AXIS_STROKE }}
                   tickLine={false}
                   axisLine={false}
-                  label={{ value: "Cards", angle: -90, position: "insideLeft", style: { fontSize: 12, fill: AXIS_STROKE } }}
+                  label={{
+                    value: "Cards",
+                    angle: -90,
+                    position: "insideLeft",
+                    style: { fontSize: 12, fill: AXIS_STROKE },
+                  }}
                 />
-                <Tooltip content={(props) => <CustomTooltip {...props} />} cursor={{ fill: "rgba(245, 230, 164, 0.2)" }} />
-                <Bar
-                  dataKey="count"
-                  fill={PASTEL_COLORS[1]}
-                  name="Cards"
-                  radius={[6, 6, 0, 0]}
-                />
+                <Tooltip content={(props) => <CustomTooltip {...props} />} cursor={{ fill: "rgba(245, 158, 11, 0.12)" }} />
+                <Bar dataKey="count" name="Cards" radius={[6, 6, 0, 0]}>
+                  {byYear.map((entry, index) => (
+                    <Cell key={entry.year} fill={getChartColor(index, String(entry.year))} />
+                  ))}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -155,7 +151,7 @@ export function AnalyticsCharts({
       )}
 
       {bySet.length > 0 ? (
-        <Card className="p-6">
+        <Card className="p-6 overflow-visible">
           <CardTitle>Top sets</CardTitle>
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
@@ -180,13 +176,12 @@ export function AnalyticsCharts({
                   tickLine={false}
                   axisLine={false}
                 />
-                <Tooltip content={(props) => <CustomTooltip {...props} />} cursor={{ fill: "rgba(248, 180, 196, 0.15)" }} />
-                <Bar
-                  dataKey="count"
-                  fill={PASTEL_COLORS[2]}
-                  name="Cards"
-                  radius={[0, 6, 6, 0]}
-                />
+                <Tooltip content={(props) => <CustomTooltip {...props} />} cursor={{ fill: "rgba(236, 72, 153, 0.1)" }} />
+                <Bar dataKey="count" name="Cards" radius={[0, 6, 6, 0]}>
+                  {bySet.map((entry, index) => (
+                    <Cell key={entry.setName} fill={getChartColor(index, entry.setName)} />
+                  ))}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -199,7 +194,7 @@ export function AnalyticsCharts({
       )}
 
       {byRarity.length > 0 ? (
-        <Card className="p-6">
+        <Card className="p-6 overflow-visible">
           <CardTitle>Cards by rarity</CardTitle>
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
@@ -227,12 +222,13 @@ export function AnalyticsCharts({
                 <Tooltip
                   content={({ active, payload }) =>
                     active && payload?.length ? (
-                      <div className="bg-white rounded-lg shadow-md border border-stone-200 px-4 py-3 text-base">
-                        <p className="font-semibold text-stone-800 mb-0.5">
+                      <div className="bg-white dark:bg-stone-900 rounded-lg shadow-md border border-stone-200 dark:border-stone-700 px-4 py-3 text-base text-stone-800 dark:text-stone-100">
+                        <p className="font-semibold text-stone-800 dark:text-stone-100 mb-0.5">
                           {payload[0].name}
                         </p>
-                        <p className="text-stone-600">
-                          {payload[0].value} {Number(payload[0].value) === 1 ? "card" : "cards"}
+                        <p className="text-stone-600 dark:text-stone-300">
+                          {payload[0].value}{" "}
+                          {Number(payload[0].value) === 1 ? "card" : "cards"}
                         </p>
                       </div>
                     ) : null
@@ -243,7 +239,9 @@ export function AnalyticsCharts({
                   align="center"
                   verticalAlign="bottom"
                   wrapperStyle={{ paddingTop: 16 }}
-                  formatter={(value) => <span className="text-stone-700 text-sm">{value}</span>}
+                  formatter={(value) => (
+                    <span className="text-stone-700 dark:text-stone-300 text-sm">{value}</span>
+                  )}
                 />
               </PieChart>
             </ResponsiveContainer>
