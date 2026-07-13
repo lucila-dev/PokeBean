@@ -80,7 +80,31 @@ const searchCache = new Map<
 >();
 const IMAGE_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const MISSING_IMAGE_TTL_MS = 60 * 60 * 1000;
-const SEARCH_CACHE_TTL_MS = 5 * 60 * 1000;
+const SEARCH_CACHE_TTL_MS = 30 * 60 * 1000;
+const SEARCH_STALE_TTL_MS = 24 * 60 * 60 * 1000;
+/** After a 429, pause outbound PokeWallet search/detail calls. */
+let rateLimitedUntil = 0;
+
+function getCachedSearch(key: string, allowStale: boolean) {
+  const cached = searchCache.get(key);
+  if (!cached) return null;
+  if (cached.expires > Date.now()) return cached.data;
+  if (allowStale && cached.expires + SEARCH_STALE_TTL_MS > Date.now()) {
+    return cached.data;
+  }
+  return null;
+}
+
+function findStaleSearchForQuery(q: string, page: number) {
+  const needle = `${q.toLowerCase()}|${page}|`;
+  for (const [key, cached] of Array.from(searchCache.entries())) {
+    if (!key.startsWith(needle)) continue;
+    if (cached.expires + SEARCH_STALE_TTL_MS > Date.now()) {
+      return cached.data;
+    }
+  }
+  return null;
+}
 
 function getCachedImage(key: string): CachedImage | null {
   const cached = imageCache.get(key);
@@ -99,14 +123,7 @@ async function fetchPokewalletImage(
 ): Promise<Response> {
   const url = `${POKEWALLET_BASE}/images/${encodeURIComponent(id)}?size=${size}`;
   const headers = { "X-API-Key": apiKey };
-  let res = await fetch(url, { headers, cache: "no-store" });
-
-  for (let attempt = 0; attempt < 2 && res.status === 403; attempt++) {
-    await new Promise((resolve) => setTimeout(resolve, 400 * (attempt + 1)));
-    res = await fetch(url, { headers, cache: "no-store" });
-  }
-
-  return res;
+  return fetch(url, { headers, cache: "force-cache", next: { revalidate: 86400 } });
 }
 
 function inferYear(info: PokewalletCardInfo): number | null {
@@ -254,18 +271,32 @@ export async function searchCatalogCards(params: {
   }
 
   const preferEnglish = params.preferEnglish === true;
+  // Only slightly over-fetch so English filtering still works without burning quota.
   const fetchSize = preferEnglish
-    ? Math.min(48, Math.max(params.pageSize * 3, params.pageSize))
+    ? Math.min(36, params.pageSize + 12)
     : params.pageSize;
 
   const cacheKey = `${q.toLowerCase()}|${params.page}|${fetchSize}|en=${preferEnglish ? 1 : 0}`;
-  const cachedSearch = searchCache.get(cacheKey);
-  if (cachedSearch && cachedSearch.expires > Date.now()) {
+  const cachedFresh = getCachedSearch(cacheKey, false);
+  if (cachedFresh) {
     return {
-      ...cachedSearch.data,
+      ...cachedFresh,
       pageSize: params.pageSize,
-      cards: cachedSearch.data.cards.slice(0, params.pageSize),
+      cards: cachedFresh.cards.slice(0, params.pageSize),
     };
+  }
+
+  if (Date.now() < rateLimitedUntil) {
+    const stale =
+      getCachedSearch(cacheKey, true) ?? findStaleSearchForQuery(q, params.page);
+    if (stale) {
+      return {
+        ...stale,
+        pageSize: params.pageSize,
+        cards: stale.cards.slice(0, params.pageSize),
+      };
+    }
+    throw new Error("Catalog search is rate-limited. Try again in a moment.");
   }
 
   const url = new URL(`${POKEWALLET_BASE}/search`);
@@ -278,7 +309,7 @@ export async function searchCatalogCards(params: {
       Accept: "application/json",
       "X-API-Key": apiKey,
     },
-    next: { revalidate: 300 },
+    next: { revalidate: 1800 },
   });
 
   if (!res.ok) {
@@ -289,6 +320,16 @@ export async function searchCatalogCards(params: {
       throw new Error("Invalid PokeWallet API key.");
     }
     if (res.status === 429) {
+      rateLimitedUntil = Date.now() + 90_000;
+      const stale =
+        getCachedSearch(cacheKey, true) ?? findStaleSearchForQuery(q, params.page);
+      if (stale) {
+        return {
+          ...stale,
+          pageSize: params.pageSize,
+          cards: stale.cards.slice(0, params.pageSize),
+        };
+      }
       throw new Error("Catalog search is rate-limited. Try again in a moment.");
     }
     throw new Error("Could not load the card catalog. Please try again.");
@@ -301,25 +342,25 @@ export async function searchCatalogCards(params: {
 
   const rawResults = json.results ?? [];
   const ranked = preferEnglish ? preferEnglishResults(rawResults) : rawResults;
-  const cards = ranked.map(mapApiCard).slice(0, params.pageSize);
+  const mapped = ranked.map(mapApiCard);
   const pagination = json.pagination;
 
-  const result = {
-    cards,
+  const fullResult = {
+    cards: mapped,
     page: pagination?.page ?? params.page,
     pageSize: params.pageSize,
-    totalCount: pagination?.total ?? cards.length,
+    totalCount: pagination?.total ?? mapped.length,
   };
 
   searchCache.set(cacheKey, {
-    data: {
-      ...result,
-      cards: ranked.map(mapApiCard),
-    },
+    data: fullResult,
     expires: Date.now() + SEARCH_CACHE_TTL_MS,
   });
 
-  return result;
+  return {
+    ...fullResult,
+    cards: mapped.slice(0, params.pageSize),
+  };
 }
 
 export async function fetchCatalogImage(
@@ -352,48 +393,12 @@ export async function fetchCatalogImage(
     return { body, contentType };
   }
 
-  // PokeWallet often 404s for JP / older listings even when search says images exist.
-  const fallback = await fetchTcgplayerFallbackImage(id, size, apiKey);
-  if (fallback) {
-    imageCache.set(cacheKey, {
-      body: fallback.body,
-      contentType: fallback.contentType,
-      expires: Date.now() + IMAGE_CACHE_TTL_MS,
-    });
-    return fallback;
-  }
-
-  if (res.status === 404 || res.status === 403) {
+  // Do not call PokeWallet /cards again for TCGPlayer fallback — that burns API
+  // quota. Browse already has imageUrlExternal from search results.
+  if (res.status === 404 || res.status === 403 || res.status === 429) {
     missingImages.set(cacheKey, Date.now() + MISSING_IMAGE_TTL_MS);
   }
   return null;
-}
-
-async function fetchTcgplayerFallbackImage(
-  id: string,
-  size: "low" | "high",
-  apiKey: string
-): Promise<{ body: ArrayBuffer; contentType: string } | null> {
-  try {
-    const cardRes = await fetch(`${POKEWALLET_BASE}/cards/${encodeURIComponent(id)}`, {
-      headers: { Accept: "application/json", "X-API-Key": apiKey },
-      cache: "no-store",
-    });
-    if (!cardRes.ok) return null;
-    const json = (await cardRes.json()) as PokewalletSearchResult;
-    const url = tcgplayerImageUrl(json.tcgplayer?.url, size);
-    if (!url) return null;
-
-    const imgRes = await fetch(url, { cache: "force-cache" });
-    if (!imgRes.ok) return null;
-
-    return {
-      body: await imgRes.arrayBuffer(),
-      contentType: imgRes.headers.get("content-type") ?? "image/jpeg",
-    };
-  } catch {
-    return null;
-  }
 }
 
 export const SUGGESTED_QUERIES = [

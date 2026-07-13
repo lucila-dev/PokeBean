@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const result = await searchCatalogCards({ q, page, pageSize });
+    const result = await searchCatalogCards({ q, page, pageSize, preferEnglish: true });
     return NextResponse.json(result);
   } catch (err) {
     const message =

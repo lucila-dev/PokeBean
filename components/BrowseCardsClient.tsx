@@ -39,7 +39,7 @@ type Props = {
   ownedCatalogCards: OwnedCatalogCard[];
 };
 
-const PAGE_SIZE = 24;
+const PAGE_SIZE = 12;
 
 const SUGGESTED_QUERIES = [
   "pikachu",
@@ -71,10 +71,11 @@ function BrowseCardTile({
   onAdd: () => void;
 }) {
   const label = getDisplayLabel(card);
+  // Prefer TCGPlayer CDN first — avoids burning PokeWallet image quota.
   const sources = [
+    card.imageUrlExternal,
     card.imageUrl,
     card.imageUrlLarge,
-    card.imageUrlExternal,
   ].filter((src, index, arr): src is string => !!src && arr.indexOf(src) === index);
 
   return (
@@ -231,7 +232,7 @@ export function BrowseCardsClient({ ownedCatalogCards: initialOwned }: Props) {
       setPage(1);
       setCards([]);
       setHasMoreSuggestions(true);
-    }, 300);
+    }, 600);
     return () => clearTimeout(timer);
   }, [search]);
 
@@ -305,17 +306,26 @@ export function BrowseCardsClient({ ownedCatalogCards: initialOwned }: Props) {
     const node = loadMoreRef.current;
     if (!node) return;
 
+    let armed = false;
+    const armTimer = setTimeout(() => {
+      armed = true;
+    }, 800);
+
     const observer = new IntersectionObserver(
       (entries) => {
+        if (!armed) return;
         if (entries[0]?.isIntersecting) {
           setPage((p) => p + 1);
         }
       },
-      { rootMargin: "400px 0px" }
+      { rootMargin: "80px 0px" }
     );
 
     observer.observe(node);
-    return () => observer.disconnect();
+    return () => {
+      clearTimeout(armTimer);
+      observer.disconnect();
+    };
   }, [showingSuggestions, hasMoreSuggestions, loading, loadingMore, cards.length]);
 
   useEffect(() => {
@@ -348,7 +358,10 @@ export function BrowseCardsClient({ ownedCatalogCards: initialOwned }: Props) {
           setName: card.setName,
           rarity: card.rarity,
           cardNumber: card.cardNumber,
-          imageUrl: card.imageUrl ?? card.imageUrlLarge,
+          imageUrl:
+            card.imageUrlExternal ??
+            card.imageUrl ??
+            card.imageUrlLarge,
         }),
       });
       const data = await res.json();
@@ -548,15 +561,15 @@ export function BrowseCardsClient({ ownedCatalogCards: initialOwned }: Props) {
               </div>
               <div className="relative w-full max-w-[240px] mx-auto aspect-[2.5/3.5] rounded-button overflow-hidden bg-stone-100 dark:bg-stone-900 mb-4">
                 {([
+                  detailCard.imageUrlExternal,
                   detailCard.imageUrlLarge,
                   detailCard.imageUrl,
-                  detailCard.imageUrlExternal,
                 ].filter(Boolean) as string[]).length > 0 ? (
                   <CatalogCardImage
                     sources={[
+                      detailCard.imageUrlExternal,
                       detailCard.imageUrlLarge,
                       detailCard.imageUrl,
-                      detailCard.imageUrlExternal,
                     ].filter((src, i, arr): src is string => !!src && arr.indexOf(src) === i)}
                     alt={getDisplayLabel(detailCard)}
                     className="object-cover object-top"
