@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
 import { getServerSession } from "next-auth";
 import { extractCardFromImage } from "@/lib/openai";
 import { prisma } from "@/lib/db";
 import { authOptions } from "@/lib/auth";
+import { saveUploadedImage } from "@/lib/saveUpload";
 
 const MAX_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
@@ -44,10 +43,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const buffer = await file.arrayBuffer();
-    const base64 = Buffer.from(buffer).toString("base64");
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const base64 = buffer.toString("base64");
 
-    // Call OpenAI Vision API to extract card data (this is what shows up on billing)
     const extracted = await extractCardFromImage(base64, file.type);
 
     const card = await prisma.card.create({
@@ -64,21 +62,16 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Save uploaded image so we can show it on the dashboard
-    const uploadsDir = path.join(process.cwd(), "public", "uploads");
-    await mkdir(uploadsDir, { recursive: true });
     const ext = getExtension(file.type);
-    const filename = `${card.id}${ext}`;
-    const filePath = path.join(uploadsDir, filename);
-    await writeFile(filePath, Buffer.from(buffer));
-
-    await prisma.card.update({
-      where: { id: card.id },
-      data: { imageUrl: `/uploads/${filename}` },
+    const imageUrl = await saveUploadedImage({
+      buffer,
+      mimeType: file.type,
+      relativePath: `uploads/${card.id}${ext}`,
     });
 
-    const updated = await prisma.card.findUniqueOrThrow({
+    const updated = await prisma.card.update({
       where: { id: card.id },
+      data: { imageUrl },
     });
 
     const res = NextResponse.json(updated, { status: 201 });

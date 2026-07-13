@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
 import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/db";
 import { authOptions } from "@/lib/auth";
+import { saveUploadedImage } from "@/lib/saveUpload";
 
 const MAX_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"] as const;
 
 function getExtension(mime: string): string {
-  if (mime === "image/jpeg") return ".jpg";
+  if (mime === "image/jpeg" || mime === "image/jpg") return ".jpg";
   if (mime === "image/png") return ".png";
   if (mime === "image/webp") return ".webp";
   return ".jpg";
@@ -43,15 +42,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const buffer = await file.arrayBuffer();
+    const buffer = Buffer.from(await file.arrayBuffer());
     const ext = getExtension(file.type);
-    const avatarDir = path.join(process.cwd(), "public", "uploads", "avatars");
-    await mkdir(avatarDir, { recursive: true });
-    const filename = `${session.user.id}${ext}`;
-    const filePath = path.join(avatarDir, filename);
-    await writeFile(filePath, Buffer.from(buffer));
+    const imageUrl = await saveUploadedImage({
+      buffer,
+      mimeType: file.type === "image/jpg" ? "image/jpeg" : file.type,
+      relativePath: `uploads/avatars/${session.user.id}${ext}`,
+    });
 
-    const imageUrl = `/uploads/avatars/${filename}`;
     await prisma.user.update({
       where: { id: session.user.id },
       data: { image: imageUrl },
@@ -61,9 +59,6 @@ export async function POST(request: NextRequest) {
   } catch (e) {
     const message = e instanceof Error ? e.message : "Upload failed";
     console.error("[avatar] upload error:", e);
-    return NextResponse.json(
-      { error: message },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

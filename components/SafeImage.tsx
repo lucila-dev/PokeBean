@@ -53,7 +53,11 @@ export function SafeImage({
       fill={fill}
       width={fill ? undefined : width}
       height={fill ? undefined : height}
-      unoptimized={isCatalogImageUrl(src) || src.startsWith("/uploads/")}
+      unoptimized={
+        isCatalogImageUrl(src) ||
+        src.startsWith("/uploads/") ||
+        src.startsWith("data:")
+      }
       className={className}
       sizes={sizes}
       onError={() => setFailed(true)}
