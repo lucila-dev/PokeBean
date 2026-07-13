@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 
 function StatIconCards() {
   return (
-    <svg className="w-8 h-8 text-pokemon-blue/70" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
+    <svg className="w-8 h-8 text-pokemon-blue/70 dark:text-pokemon-yellow/80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
       <rect x="3" y="3" width="7" height="7" rx="1" />
       <rect x="14" y="3" width="7" height="7" rx="1" />
       <rect x="3" y="14" width="7" height="7" rx="1" />
@@ -22,7 +22,7 @@ function StatIconCards() {
 
 function StatIconSets() {
   return (
-    <svg className="w-8 h-8 text-pokemon-blue/70" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
+    <svg className="w-8 h-8 text-pokemon-blue/70 dark:text-pokemon-yellow/80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
       <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
       <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
       <line x1="12" y1="22.08" x2="12" y2="12" />
@@ -32,7 +32,7 @@ function StatIconSets() {
 
 function StatIconCalendar() {
   return (
-    <svg className="w-8 h-8 text-pokemon-blue/70" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
+    <svg className="w-8 h-8 text-pokemon-blue/70 dark:text-pokemon-yellow/80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
       <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
       <line x1="16" y1="2" x2="16" y2="6" />
       <line x1="8" y1="2" x2="8" y2="6" />
@@ -43,7 +43,7 @@ function StatIconCalendar() {
 
 function StatIconRarity() {
   return (
-    <svg className="w-8 h-8 text-pokemon-blue/70" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
+    <svg className="w-8 h-8 text-pokemon-blue/70 dark:text-pokemon-yellow/80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
       <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
     </svg>
   );
@@ -124,37 +124,37 @@ export default async function AnalyticsPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
             <Card className="p-6">
               <StatIconCards />
-              <p className="text-stone-500 text-sm font-medium mt-3">
+              <p className="text-stone-500 dark:text-stone-300 text-sm font-medium mt-3">
                 Total cards
               </p>
-              <p className="text-3xl font-bold text-pokemon-dark mt-1">
+              <p className="text-3xl font-bold text-pokemon-dark dark:text-white mt-1">
                 {total}
               </p>
             </Card>
             <Card className="p-6">
               <StatIconSets />
-              <p className="text-stone-500 text-sm font-medium mt-3">
+              <p className="text-stone-500 dark:text-stone-300 text-sm font-medium mt-3">
                 Unique sets
               </p>
-              <p className="text-3xl font-bold text-pokemon-dark mt-1">
+              <p className="text-3xl font-bold text-pokemon-dark dark:text-white mt-1">
                 {sets.length}
               </p>
             </Card>
             <Card className="p-6">
               <StatIconCalendar />
-              <p className="text-stone-500 text-sm font-medium mt-3">
+              <p className="text-stone-500 dark:text-stone-300 text-sm font-medium mt-3">
                 Oldest card (year)
               </p>
-              <p className="text-3xl font-bold text-pokemon-dark mt-1">
+              <p className="text-3xl font-bold text-pokemon-dark dark:text-white mt-1">
                 {oldestYear ?? "—"}
               </p>
             </Card>
             <Card className="p-6">
               <StatIconRarity />
-              <p className="text-stone-500 text-sm font-medium mt-3">
+              <p className="text-stone-500 dark:text-stone-300 text-sm font-medium mt-3">
                 Rarity types
               </p>
-              <p className="text-3xl font-bold text-pokemon-dark mt-1">
+              <p className="text-3xl font-bold text-pokemon-dark dark:text-white mt-1">
                 {Object.keys(byRarity).length}
               </p>
             </Card>

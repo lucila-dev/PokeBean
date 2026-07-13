@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import {
   BarChart,
   Bar,
@@ -16,9 +17,32 @@ import {
 import { Card, CardTitle } from "@/components/ui/Card";
 import { getChartColor, getRarityColor } from "@/lib/rarityColors";
 
-const GRID_STROKE = "#e7e5e4";
-const AXIS_STROKE = "#a8a29e";
 const TICK_FONT_SIZE = 13;
+
+function useChartTheme() {
+  const [dark, setDark] = useState(false);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const sync = () => setDark(root.classList.contains("dark"));
+    sync();
+    const observer = new MutationObserver(sync);
+    observer.observe(root, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, []);
+
+  return dark
+    ? {
+        grid: "#44403c",
+        axis: "#e7e5e4",
+        pieStroke: "#1c1917",
+      }
+    : {
+        grid: "#e7e5e4",
+        axis: "#a8a29e",
+        pieStroke: "#ffffff",
+      };
+}
 
 function formatMonth(monthStr: string) {
   const [y, m] = monthStr.split("-");
@@ -61,6 +85,8 @@ export function AnalyticsCharts({
   byRarity,
   byMonth,
 }: Props) {
+  const theme = useChartTheme();
+
   return (
     <div className="space-y-10">
       {byMonth.length > 0 ? (
@@ -72,23 +98,23 @@ export function AnalyticsCharts({
                 data={byMonth.map((d) => ({ ...d, monthLabel: formatMonth(d.month) }))}
                 margin={{ top: 16, right: 16, left: 8, bottom: 8 }}
               >
-                <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke={theme.grid} vertical={false} />
                 <XAxis
                   dataKey="monthLabel"
-                  tick={{ fontSize: TICK_FONT_SIZE, fill: AXIS_STROKE }}
+                  tick={{ fontSize: TICK_FONT_SIZE, fill: theme.axis }}
                   tickLine={false}
-                  axisLine={{ stroke: AXIS_STROKE }}
+                  axisLine={{ stroke: theme.axis }}
                 />
                 <YAxis
                   allowDecimals={false}
-                  tick={{ fontSize: TICK_FONT_SIZE, fill: AXIS_STROKE }}
+                  tick={{ fontSize: TICK_FONT_SIZE, fill: theme.axis }}
                   tickLine={false}
                   axisLine={false}
                   label={{
                     value: "Cards",
                     angle: -90,
                     position: "insideLeft",
-                    style: { fontSize: 12, fill: AXIS_STROKE },
+                    style: { fontSize: 12, fill: theme.axis },
                   }}
                 />
                 <Tooltip content={(props) => <CustomTooltip {...props} />} cursor={{ fill: "rgba(59, 130, 246, 0.12)" }} />
@@ -104,7 +130,7 @@ export function AnalyticsCharts({
       ) : (
         <Card className="p-6">
           <CardTitle>Cards added over time</CardTitle>
-          <p className="text-stone-500 text-sm py-8 text-center">No data yet</p>
+          <p className="text-stone-500 dark:text-stone-300 text-sm py-8 text-center">No data yet</p>
         </Card>
       )}
 
@@ -114,23 +140,23 @@ export function AnalyticsCharts({
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={byYear} margin={{ top: 16, right: 16, left: 8, bottom: 8 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke={theme.grid} vertical={false} />
                 <XAxis
                   dataKey="year"
-                  tick={{ fontSize: TICK_FONT_SIZE, fill: AXIS_STROKE }}
+                  tick={{ fontSize: TICK_FONT_SIZE, fill: theme.axis }}
                   tickLine={false}
-                  axisLine={{ stroke: AXIS_STROKE }}
+                  axisLine={{ stroke: theme.axis }}
                 />
                 <YAxis
                   allowDecimals={false}
-                  tick={{ fontSize: TICK_FONT_SIZE, fill: AXIS_STROKE }}
+                  tick={{ fontSize: TICK_FONT_SIZE, fill: theme.axis }}
                   tickLine={false}
                   axisLine={false}
                   label={{
                     value: "Cards",
                     angle: -90,
                     position: "insideLeft",
-                    style: { fontSize: 12, fill: AXIS_STROKE },
+                    style: { fontSize: 12, fill: theme.axis },
                   }}
                 />
                 <Tooltip content={(props) => <CustomTooltip {...props} />} cursor={{ fill: "rgba(245, 158, 11, 0.12)" }} />
@@ -146,7 +172,7 @@ export function AnalyticsCharts({
       ) : (
         <Card className="p-6">
           <CardTitle>Cards by year</CardTitle>
-          <p className="text-stone-500 text-sm py-8 text-center">No data yet</p>
+          <p className="text-stone-500 dark:text-stone-300 text-sm py-8 text-center">No data yet</p>
         </Card>
       )}
 
@@ -160,19 +186,19 @@ export function AnalyticsCharts({
                 layout="vertical"
                 margin={{ left: 8, right: 24, top: 16, bottom: 16 }}
               >
-                <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} horizontal={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke={theme.grid} horizontal={false} />
                 <XAxis
                   type="number"
                   allowDecimals={false}
-                  tick={{ fontSize: TICK_FONT_SIZE, fill: AXIS_STROKE }}
+                  tick={{ fontSize: TICK_FONT_SIZE, fill: theme.axis }}
                   tickLine={false}
-                  axisLine={{ stroke: AXIS_STROKE }}
+                  axisLine={{ stroke: theme.axis }}
                 />
                 <YAxis
                   type="category"
                   dataKey="setName"
                   width={140}
-                  tick={{ fontSize: 12, fill: AXIS_STROKE }}
+                  tick={{ fontSize: 12, fill: theme.axis }}
                   tickLine={false}
                   axisLine={false}
                 />
@@ -189,7 +215,7 @@ export function AnalyticsCharts({
       ) : (
         <Card className="p-6">
           <CardTitle>Top sets</CardTitle>
-          <p className="text-stone-500 text-sm py-8 text-center">No data yet</p>
+          <p className="text-stone-500 dark:text-stone-300 text-sm py-8 text-center">No data yet</p>
         </Card>
       )}
 
@@ -208,13 +234,13 @@ export function AnalyticsCharts({
                   outerRadius="65%"
                   paddingAngle={2}
                   label={({ rarity, count }) => `${rarity}: ${count}`}
-                  labelLine={{ stroke: AXIS_STROKE, strokeWidth: 1 }}
+                  labelLine={{ stroke: theme.axis, strokeWidth: 1 }}
                 >
                   {byRarity.map((entry) => (
                     <Cell
                       key={entry.rarity}
                       fill={getRarityColor(entry.rarity)}
-                      stroke="white"
+                      stroke={theme.pieStroke}
                       strokeWidth={2}
                     />
                   ))}
@@ -240,7 +266,7 @@ export function AnalyticsCharts({
                   verticalAlign="bottom"
                   wrapperStyle={{ paddingTop: 16 }}
                   formatter={(value) => (
-                    <span className="text-stone-700 dark:text-stone-300 text-sm">{value}</span>
+                    <span className="text-stone-700 dark:text-stone-200 text-sm">{value}</span>
                   )}
                 />
               </PieChart>
@@ -250,7 +276,7 @@ export function AnalyticsCharts({
       ) : (
         <Card className="p-6">
           <CardTitle>Cards by rarity</CardTitle>
-          <p className="text-stone-500 text-sm py-8 text-center">No data yet</p>
+          <p className="text-stone-500 dark:text-stone-300 text-sm py-8 text-center">No data yet</p>
         </Card>
       )}
 
@@ -259,7 +285,7 @@ export function AnalyticsCharts({
         byRarity.length === 0 &&
         byMonth.length === 0 && (
           <Card className="p-12 text-center">
-            <p className="text-stone-500">Add some cards to see analytics here.</p>
+            <p className="text-stone-500 dark:text-stone-300">Add some cards to see analytics here.</p>
           </Card>
         )}
     </div>

@@ -42,6 +42,7 @@ type PokewalletSearchResult = {
   id: string;
   card_info?: PokewalletCardInfo;
   tcgplayer?: { url?: string | null } | null;
+  images?: { languages?: string[] } | null;
 };
 
 type PokewalletSearchResponse = {
@@ -183,6 +184,34 @@ function mapApiCard(result: PokewalletSearchResult): CatalogCard {
   );
 }
 
+const JP_SCRIPT = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]/;
+/** JP expansions on TCGPlayer are often labeled like "XY3: Rising Fist". */
+const JP_SET_CODE_LABEL = /^[A-Z]{1,4}\d+[a-z]?:\s/;
+
+function isLikelyEnglishCatalogResult(result: PokewalletSearchResult): boolean {
+  const info = result.card_info ?? {};
+  const name = info.name ?? "";
+  const setName = (info.set_name ?? "").trim();
+  if (JP_SCRIPT.test(name) || JP_SCRIPT.test(setName)) return false;
+  if (JP_SET_CODE_LABEL.test(setName)) return false;
+  const langs = result.images?.languages;
+  if (Array.isArray(langs) && langs.length > 0 && !langs.includes("en")) {
+    return false;
+  }
+  return true;
+}
+
+function preferEnglishResults(
+  results: PokewalletSearchResult[]
+): PokewalletSearchResult[] {
+  const english = results.filter(isLikelyEnglishCatalogResult);
+  // Keep a few non-English only if we would otherwise return almost nothing.
+  if (english.length >= Math.min(6, results.length)) return english;
+  if (english.length === 0) return results;
+  const extras = results.filter((r) => !isLikelyEnglishCatalogResult(r));
+  return [...english, ...extras];
+}
+
 export async function fetchCatalogCardById(id: string): Promise<CatalogCard | null> {
   const apiKey = getApiKey();
   if (!apiKey) return null;
@@ -207,6 +236,7 @@ export async function searchCatalogCards(params: {
   q: string;
   page: number;
   pageSize: number;
+  preferEnglish?: boolean;
 }): Promise<{ cards: CatalogCard[]; page: number; pageSize: number; totalCount: number }> {
   const q = params.q.trim();
   if (!q) {
@@ -223,16 +253,25 @@ export async function searchCatalogCards(params: {
     throw new Error("PokeWallet API key is not configured.");
   }
 
-  const cacheKey = `${q.toLowerCase()}|${params.page}|${params.pageSize}`;
+  const preferEnglish = params.preferEnglish === true;
+  const fetchSize = preferEnglish
+    ? Math.min(48, Math.max(params.pageSize * 3, params.pageSize))
+    : params.pageSize;
+
+  const cacheKey = `${q.toLowerCase()}|${params.page}|${fetchSize}|en=${preferEnglish ? 1 : 0}`;
   const cachedSearch = searchCache.get(cacheKey);
   if (cachedSearch && cachedSearch.expires > Date.now()) {
-    return cachedSearch.data;
+    return {
+      ...cachedSearch.data,
+      pageSize: params.pageSize,
+      cards: cachedSearch.data.cards.slice(0, params.pageSize),
+    };
   }
 
   const url = new URL(`${POKEWALLET_BASE}/search`);
   url.searchParams.set("q", q);
   url.searchParams.set("page", String(params.page));
-  url.searchParams.set("limit", String(params.pageSize));
+  url.searchParams.set("limit", String(fetchSize));
 
   const res = await fetch(url.toString(), {
     headers: {
@@ -260,18 +299,23 @@ export async function searchCatalogCards(params: {
     throw new Error(json.error);
   }
 
-  const cards = (json.results ?? []).map(mapApiCard);
+  const rawResults = json.results ?? [];
+  const ranked = preferEnglish ? preferEnglishResults(rawResults) : rawResults;
+  const cards = ranked.map(mapApiCard).slice(0, params.pageSize);
   const pagination = json.pagination;
 
   const result = {
     cards,
     page: pagination?.page ?? params.page,
-    pageSize: pagination?.limit ?? params.pageSize,
+    pageSize: params.pageSize,
     totalCount: pagination?.total ?? cards.length,
   };
 
   searchCache.set(cacheKey, {
-    data: result,
+    data: {
+      ...result,
+      cards: ranked.map(mapApiCard),
+    },
     expires: Date.now() + SEARCH_CACHE_TTL_MS,
   });
 
@@ -374,7 +418,12 @@ export async function getSuggestedCatalogCards(params: {
   const queryPage = Math.floor((page - 1) / SUGGESTED_QUERIES.length) + 1;
   const q = SUGGESTED_QUERIES[queryIndex];
 
-  const result = await searchCatalogCards({ q, page: queryPage, pageSize });
+  const result = await searchCatalogCards({
+    q,
+    page: queryPage,
+    pageSize,
+    preferEnglish: true,
+  });
   const queryTotalPages = Math.max(1, Math.ceil(result.totalCount / pageSize));
   const moreInQuery = queryPage < queryTotalPages;
   const moreQueriesAhead = queryIndex < SUGGESTED_QUERIES.length - 1;
