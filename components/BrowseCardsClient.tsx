@@ -230,18 +230,27 @@ export function BrowseCardsClient({ ownedCatalogCards: initialOwned }: Props) {
     };
   };
 
+  const debouncedSearchRef = useRef(debouncedSearch);
+
+  // Debounce typing only. Never clear cards here — that wiped suggestions ~600ms
+  // after load when page/query were unchanged so nothing refetched.
   useEffect(() => {
     const timer = setTimeout(() => {
+      if (search === debouncedSearchRef.current) return;
+      debouncedSearchRef.current = search;
       setDebouncedSearch(search);
       setPage(1);
-      setCards([]);
       setHasMoreSuggestions(true);
     }, 600);
     return () => clearTimeout(timer);
   }, [search]);
 
   const fetchCards = useCallback(
-    async (pageToLoad: number, append: boolean) => {
+    async (
+      pageToLoad: number,
+      append: boolean,
+      signal?: AbortSignal
+    ) => {
       if (append) {
         setLoadingMore(true);
       } else {
@@ -262,8 +271,11 @@ export function BrowseCardsClient({ ownedCatalogCards: initialOwned }: Props) {
           params.set("q", debouncedSearch.trim());
         }
 
-        const res = await fetch(`/api/catalog?${params.toString()}`);
+        const res = await fetch(`/api/catalog?${params.toString()}`, {
+          signal,
+        });
         const data = await res.json();
+        if (signal?.aborted) return;
         if (!res.ok) throw new Error(data.error ?? "Search failed");
 
         const nextCards = (data.cards ?? []) as CatalogCard[];
@@ -285,6 +297,9 @@ export function BrowseCardsClient({ ownedCatalogCards: initialOwned }: Props) {
           setHasMoreSuggestions(Boolean(data.hasMore));
         }
       } catch (e) {
+        if (signal?.aborted || (e instanceof DOMException && e.name === "AbortError")) {
+          return;
+        }
         setError(e instanceof Error ? e.message : "Search failed");
         if (!append) {
           setCards([]);
@@ -292,16 +307,20 @@ export function BrowseCardsClient({ ownedCatalogCards: initialOwned }: Props) {
         }
         setHasMoreSuggestions(false);
       } finally {
-        setLoading(false);
-        setLoadingMore(false);
+        if (!signal?.aborted) {
+          setLoading(false);
+          setLoadingMore(false);
+        }
       }
     },
     [debouncedSearch]
   );
 
   useEffect(() => {
+    const controller = new AbortController();
     const append = page > 1 && !debouncedSearch.trim();
-    fetchCards(page, append);
+    fetchCards(page, append, controller.signal);
+    return () => controller.abort();
   }, [fetchCards, page, debouncedSearch]);
 
   useEffect(() => {
