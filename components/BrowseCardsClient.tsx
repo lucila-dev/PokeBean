@@ -24,6 +24,7 @@ type CatalogCard = {
   cardNumber: string | null;
   imageUrl: string | null;
   imageUrlLarge: string | null;
+  imageUrlExternal?: string | null;
   description: string | null;
 };
 
@@ -70,11 +71,11 @@ function BrowseCardTile({
   onAdd: () => void;
 }) {
   const label = getDisplayLabel(card);
-  const thumbSrc = card.imageUrl ?? card.imageUrlLarge;
-  const fallbackSrc =
-    card.imageUrl && card.imageUrlLarge && card.imageUrl !== card.imageUrlLarge
-      ? card.imageUrlLarge
-      : null;
+  const sources = [
+    card.imageUrl,
+    card.imageUrlLarge,
+    card.imageUrlExternal,
+  ].filter((src, index, arr): src is string => !!src && arr.indexOf(src) === index);
 
   return (
     <Card className={CARD_HOVER}>
@@ -86,10 +87,9 @@ function BrowseCardTile({
           aria-label={`View details for ${label}`}
         >
           <div className="relative aspect-[2.5/3.5] bg-stone-100 dark:bg-stone-900 overflow-hidden">
-            {thumbSrc ? (
+            {sources.length > 0 ? (
               <CatalogCardImage
-                src={thumbSrc}
-                fallbackSrc={fallbackSrc}
+                sources={sources}
                 alt={label}
                 className="object-cover object-top"
                 priority={false}
@@ -149,27 +149,26 @@ function CardImagePlaceholder({ label }: { label: string }) {
 }
 
 function CatalogCardImage({
-  src,
-  fallbackSrc,
+  sources,
   alt,
   className,
   priority = false,
 }: {
-  src: string;
-  fallbackSrc?: string | null;
+  sources: string[];
   alt: string;
   className?: string;
   priority?: boolean;
 }) {
-  const [currentSrc, setCurrentSrc] = useState(src);
+  const [index, setIndex] = useState(0);
   const [failed, setFailed] = useState(false);
+  const currentSrc = sources[index];
 
   useEffect(() => {
-    setCurrentSrc(src);
+    setIndex(0);
     setFailed(false);
-  }, [src]);
+  }, [sources.join("|")]);
 
-  if (failed) {
+  if (failed || !currentSrc) {
     return <CardImagePlaceholder label={alt} />;
   }
 
@@ -184,8 +183,8 @@ function CatalogCardImage({
       sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, (min-width: 640px) 50vw, 100vw"
       className={className}
       onError={() => {
-        if (fallbackSrc && currentSrc !== fallbackSrc) {
-          setCurrentSrc(fallbackSrc);
+        if (index < sources.length - 1) {
+          setIndex((i) => i + 1);
           return;
         }
         setFailed(true);
@@ -548,14 +547,17 @@ export function BrowseCardsClient({ ownedCatalogCards: initialOwned }: Props) {
                 </button>
               </div>
               <div className="relative w-full max-w-[240px] mx-auto aspect-[2.5/3.5] rounded-button overflow-hidden bg-stone-100 dark:bg-stone-900 mb-4">
-                {(detailCard.imageUrlLarge ?? detailCard.imageUrl) ? (
+                {([
+                  detailCard.imageUrlLarge,
+                  detailCard.imageUrl,
+                  detailCard.imageUrlExternal,
+                ].filter(Boolean) as string[]).length > 0 ? (
                   <CatalogCardImage
-                    src={detailCard.imageUrlLarge ?? detailCard.imageUrl!}
-                    fallbackSrc={
-                      detailCard.imageUrlLarge && detailCard.imageUrl
-                        ? detailCard.imageUrl
-                        : null
-                    }
+                    sources={[
+                      detailCard.imageUrlLarge,
+                      detailCard.imageUrl,
+                      detailCard.imageUrlExternal,
+                    ].filter((src, i, arr): src is string => !!src && arr.indexOf(src) === i)}
                     alt={getDisplayLabel(detailCard)}
                     className="object-cover object-top"
                     priority

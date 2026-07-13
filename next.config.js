@@ -10,6 +10,14 @@ const nextConfig = {
         protocol: "https",
         hostname: "images.scrydex.com",
       },
+      {
+        protocol: "https",
+        hostname: "product-images.tcgplayer.com",
+      },
+      {
+        protocol: "https",
+        hostname: "tcgplayer-cdn.tcgplayer.com",
+      },
     ],
   },
 };

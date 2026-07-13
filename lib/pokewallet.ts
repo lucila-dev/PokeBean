@@ -20,6 +20,8 @@ export type CatalogCard = {
   cardNumber: string | null;
   imageUrl: string | null;
   imageUrlLarge: string | null;
+  /** Direct CDN fallback when PokeWallet has no image (e.g. some JP sets). */
+  imageUrlExternal: string | null;
   description: string | null;
 };
 
@@ -39,6 +41,7 @@ type PokewalletCardInfo = {
 type PokewalletSearchResult = {
   id: string;
   card_info?: PokewalletCardInfo;
+  tcgplayer?: { url?: string | null } | null;
 };
 
 type PokewalletSearchResponse = {
@@ -113,10 +116,35 @@ export function catalogImageUrl(id: string, size: "low" | "high" = "low"): strin
   return `/api/catalog/image?id=${encodeURIComponent(id)}&size=${size}`;
 }
 
-function mapPokewalletCard(id: string, info: PokewalletCardInfo): CatalogCard {
+function tcgplayerProductId(url?: string | null): string | null {
+  if (!url) return null;
+  const match = url.match(/\/product\/(\d+)/i);
+  return match?.[1] ?? null;
+}
+
+export function tcgplayerImageUrl(
+  productUrlOrId?: string | null,
+  size: "low" | "high" = "low"
+): string | null {
+  if (!productUrlOrId) return null;
+  const id = /^\d+$/.test(productUrlOrId)
+    ? productUrlOrId
+    : tcgplayerProductId(productUrlOrId);
+  if (!id) return null;
+  return size === "high"
+    ? `https://product-images.tcgplayer.com/${id}.jpg`
+    : `https://product-images.tcgplayer.com/fit-in/437x437/${id}.jpg`;
+}
+
+function mapPokewalletCard(
+  id: string,
+  info: PokewalletCardInfo,
+  tcgplayerUrl?: string | null
+): CatalogCard {
   const setName = info.set_name ? stripTcgPrefix(info.set_name.trim()) : null;
   const name = extractCardName(info.name?.trim() || "Unknown");
   const cardNumber = info.card_number?.trim() || null;
+  const external = tcgplayerImageUrl(tcgplayerUrl, "low");
 
   const normalized = normalizeCardFields({
     name,
@@ -142,12 +170,17 @@ function mapPokewalletCard(id: string, info: PokewalletCardInfo): CatalogCard {
     cardNumber: normalized.cardNumber ?? null,
     imageUrl: catalogImageUrl(id, "low"),
     imageUrlLarge: catalogImageUrl(id, "high"),
+    imageUrlExternal: external,
     description: normalized.description ?? null,
   };
 }
 
 function mapApiCard(result: PokewalletSearchResult): CatalogCard {
-  return mapPokewalletCard(result.id, result.card_info ?? {});
+  return mapPokewalletCard(
+    result.id,
+    result.card_info ?? {},
+    result.tcgplayer?.url
+  );
 }
 
 export async function fetchCatalogCardById(id: string): Promise<CatalogCard | null> {
@@ -167,7 +200,7 @@ export async function fetchCatalogCardById(id: string): Promise<CatalogCard | nu
   const json = (await res.json()) as PokewalletSearchResult & { error?: string };
   if (json.error || !json.id) return null;
 
-  return mapPokewalletCard(json.id, json.card_info ?? {});
+  return mapPokewalletCard(json.id, json.card_info ?? {}, json.tcgplayer?.url);
 }
 
 export async function searchCatalogCards(params: {
@@ -264,22 +297,59 @@ export async function fetchCatalogImage(
 
   const res = await fetchPokewalletImage(id, size, apiKey);
 
-  if (!res.ok) {
-    if (res.status === 404 || res.status === 403) {
-      missingImages.set(cacheKey, Date.now() + MISSING_IMAGE_TTL_MS);
-    }
-    return null;
+  if (res.ok) {
+    const body = await res.arrayBuffer();
+    const contentType = res.headers.get("content-type") ?? "image/jpeg";
+    imageCache.set(cacheKey, {
+      body,
+      contentType,
+      expires: Date.now() + IMAGE_CACHE_TTL_MS,
+    });
+    return { body, contentType };
   }
 
-  const body = await res.arrayBuffer();
-  const contentType = res.headers.get("content-type") ?? "image/jpeg";
-  imageCache.set(cacheKey, {
-    body,
-    contentType,
-    expires: Date.now() + IMAGE_CACHE_TTL_MS,
-  });
+  // PokeWallet often 404s for JP / older listings even when search says images exist.
+  const fallback = await fetchTcgplayerFallbackImage(id, size, apiKey);
+  if (fallback) {
+    imageCache.set(cacheKey, {
+      body: fallback.body,
+      contentType: fallback.contentType,
+      expires: Date.now() + IMAGE_CACHE_TTL_MS,
+    });
+    return fallback;
+  }
 
-  return { body, contentType };
+  if (res.status === 404 || res.status === 403) {
+    missingImages.set(cacheKey, Date.now() + MISSING_IMAGE_TTL_MS);
+  }
+  return null;
+}
+
+async function fetchTcgplayerFallbackImage(
+  id: string,
+  size: "low" | "high",
+  apiKey: string
+): Promise<{ body: ArrayBuffer; contentType: string } | null> {
+  try {
+    const cardRes = await fetch(`${POKEWALLET_BASE}/cards/${encodeURIComponent(id)}`, {
+      headers: { Accept: "application/json", "X-API-Key": apiKey },
+      cache: "no-store",
+    });
+    if (!cardRes.ok) return null;
+    const json = (await cardRes.json()) as PokewalletSearchResult;
+    const url = tcgplayerImageUrl(json.tcgplayer?.url, size);
+    if (!url) return null;
+
+    const imgRes = await fetch(url, { cache: "force-cache" });
+    if (!imgRes.ok) return null;
+
+    return {
+      body: await imgRes.arrayBuffer(),
+      contentType: imgRes.headers.get("content-type") ?? "image/jpeg",
+    };
+  } catch {
+    return null;
+  }
 }
 
 export const SUGGESTED_QUERIES = [
