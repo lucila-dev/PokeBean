@@ -136,11 +136,6 @@ export async function searchPokemonTcgCards(params: {
   url.searchParams.set("page", String(params.page));
   url.searchParams.set("pageSize", String(Math.min(50, Math.max(params.pageSize, 12))));
   url.searchParams.set("orderBy", "name,set.releaseDate");
-  // Select only fields we need — faster + cleaner payloads.
-  url.searchParams.set(
-    "select",
-    "id,name,number,rarity,set,images,flavorText,attacks,abilities"
-  );
 
   const res = await fetch(url.toString(), {
     headers: getTcgHeaders(),

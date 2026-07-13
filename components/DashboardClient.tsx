@@ -309,65 +309,71 @@ export function DashboardClient({
         </div>
       </Card>
 
-      {/* Selection bar: enter selection mode + actions when selecting (grouped above content) */}
-      <div
-        className="mb-4 w-fit flex flex-wrap items-center gap-3 rounded-card border border-stone-200 dark:border-stone-700 bg-stone-50/50 dark:bg-stone-900 px-4 py-3 transition-colors"
-      >
-        {!selectionMode ? (
-          <button
-            type="button"
-            onClick={() => setSelectionMode(true)}
-            className={toolbarBtn}
-          >
-            Select cards
-          </button>
-        ) : (
-          <>
+      {/* Selection bar + collection total */}
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="w-fit flex flex-wrap items-center gap-3 rounded-card border border-stone-200 dark:border-stone-700 bg-stone-50/50 dark:bg-stone-900 px-4 py-3 transition-colors">
+          {!selectionMode ? (
             <button
               type="button"
-              onClick={() => {
-                setSelectionMode(false);
-                setSelectedIds(new Set());
-              }}
+              onClick={() => setSelectionMode(true)}
               className={toolbarBtn}
             >
-              Done
+              Select cards
             </button>
-            {paginated.length > 0 && (
+          ) : (
+            <>
               <button
                 type="button"
-                onClick={toggleSelectAllOnPage}
+                onClick={() => {
+                  setSelectionMode(false);
+                  setSelectedIds(new Set());
+                }}
                 className={toolbarBtn}
               >
-                {allSelectedOnPage ? "Deselect page" : "Select all on page"}
+                Done
               </button>
-            )}
-            {someSelected && (
-              <>
-                <span className="text-sm font-medium text-stone-700 dark:text-stone-200">
-                  {selectedIds.size} selected
-                </span>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={deleteSelected}
-                    disabled={deleting}
-                    className={`${toolbarBtn} disabled:opacity-50 disabled:cursor-not-allowed`}
-                  >
-                    {deleting ? "Deleting…" : "Delete selected"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedIds(new Set())}
-                    className={toolbarBtn}
-                  >
-                    Clear selection
-                  </button>
-                </div>
-              </>
-            )}
-          </>
-        )}
+              {paginated.length > 0 && (
+                <button
+                  type="button"
+                  onClick={toggleSelectAllOnPage}
+                  className={toolbarBtn}
+                >
+                  {allSelectedOnPage ? "Deselect page" : "Select all on page"}
+                </button>
+              )}
+              {someSelected && (
+                <>
+                  <span className="text-sm font-medium text-stone-700 dark:text-stone-200">
+                    {selectedIds.size} selected
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={deleteSelected}
+                      disabled={deleting}
+                      className={`${toolbarBtn} disabled:opacity-50 disabled:cursor-not-allowed`}
+                    >
+                      {deleting ? "Deleting…" : "Delete selected"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedIds(new Set())}
+                      className={toolbarBtn}
+                    >
+                      Clear selection
+                    </button>
+                  </div>
+                </>
+              )}
+            </>
+          )}
+        </div>
+        <p className="text-sm font-medium text-stone-700 dark:text-stone-200 tabular-nums">
+          {filtered.length} card{filtered.length !== 1 ? "s" : ""}
+          {filtered.length !== initialCards.length
+            ? ` of ${initialCards.length}`
+            : ""}
+        </p>
       </div>
 
       {/* Table (list view) */}
@@ -507,11 +513,11 @@ export function DashboardClient({
         </Card>
       </div>
 
-      {/* Card grid (card view): 3–4 per row, image prominent, click image for full details */}
+      {/* Card grid: 2 cols on phone, more on larger screens */}
       <div
         className={
           viewMode === "card"
-            ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5"
+            ? "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5"
             : "hidden"
         }
       >
@@ -521,7 +527,7 @@ export function DashboardClient({
               key={c.id}
               className={`group overflow-hidden p-0 flex flex-col transition-all duration-200 ease-out
                 hover:shadow-card-hover-cute hover:-translate-y-1 hover:scale-[1.02]
-                hover:ring-2 hover:ring-pokemon-yellow/30
+                hover:ring-2 hover:ring-pokemon-yellow/30 active:scale-[0.98]
                 ${selectedIds.has(c.id) ? "ring-2 ring-pokemon-blue" : ""}`}
             >
               <div className="relative flex-1 flex flex-col">
@@ -543,22 +549,24 @@ export function DashboardClient({
                   className="block w-full text-left focus:outline-none focus-ring rounded-t-card overflow-hidden"
                   aria-label={`View details for ${getDisplayLabel(c)}`}
                 >
-                  <div className="relative w-full aspect-[2.5/3.5] bg-stone-100 overflow-hidden">
+                  <div className="relative w-full aspect-[2.5/3.5] bg-stone-100 dark:bg-stone-900 overflow-hidden">
                     <SafeImage
                       src={c.imageUrl}
                       alt={getDisplayLabel(c)}
                       fill
                       className="object-cover object-top"
-                      sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, (min-width: 640px) 50vw, 100vw"
+                      sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"
                     />
                   </div>
                 </button>
-                <div className="p-3 flex flex-col gap-1">
-                  <p className="font-medium text-pokemon-dark dark:text-stone-100 text-sm line-clamp-2 leading-snug">
+                <div className="p-2 sm:p-3 flex flex-col gap-1">
+                  <p className="font-medium text-pokemon-dark dark:text-stone-100 text-xs sm:text-sm line-clamp-2 leading-snug">
                     {getDisplayLabel(c)}
                   </p>
                   <div className="flex flex-wrap items-center gap-1.5 text-xs text-stone-600 dark:text-stone-400">
-                    {c.setName && <span className="truncate">{c.setName}</span>}
+                    {c.setName && (
+                      <span className="truncate hidden sm:inline">{c.setName}</span>
+                    )}
                     {c.rarity && <Badge variant={c.rarity}>{c.rarity}</Badge>}
                   </div>
                   {c.marketPrice != null && (
@@ -571,9 +579,10 @@ export function DashboardClient({
             </Card>
           ))}
         {viewMode === "card" && (
-          <div className="sm:col-span-2 md:col-span-3 lg:col-span-4 px-1 py-3 flex flex-wrap items-center justify-between gap-2">
-            <span className="text-sm text-stone-500">
-              {filtered.length} card{filtered.length !== 1 ? "s" : ""}
+          <div className="col-span-2 md:col-span-3 lg:col-span-4 px-1 py-3 flex flex-wrap items-center justify-between gap-2">
+            <span className="text-sm text-stone-500 dark:text-stone-400">
+              Showing {paginated.length} of {filtered.length} card
+              {filtered.length !== 1 ? "s" : ""}
               {filtered.length !== initialCards.length && " (filtered)"}
             </span>
             {totalPages > 1 && (
@@ -715,99 +724,6 @@ export function DashboardClient({
           </div>
         </div>
       )}
-
-      {/* Mobile: same grid (2 cols), image on top, tap for details */}
-      <div
-        className={`${viewMode === "card" ? "grid grid-cols-2 gap-3" : "hidden"} md:hidden`}
-      >
-        {viewMode === "card" &&
-          paginated.map((c) => (
-            <Card
-              key={c.id}
-              className={`group overflow-hidden p-0 flex flex-col transition-all duration-200 ease-out
-                hover:shadow-card-hover-cute active:scale-[0.98]
-                ${selectedIds.has(c.id) ? "ring-2 ring-pokemon-blue" : ""}`}
-            >
-              <div className="relative flex flex-col">
-                {selectionMode && (
-                  <label className="absolute top-1.5 left-1.5 z-10 flex items-center rounded-full bg-white/95 dark:bg-stone-900/95 px-1 py-0.5 shadow backdrop-blur-sm">
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.has(c.id)}
-                      onChange={() => toggleSelect(c.id)}
-                      onClick={(e) => e.stopPropagation()}
-                      aria-label={`Select ${getDisplayLabel(c)}`}
-                      className="rounded border-stone-300 w-3.5 h-3.5"
-                    />
-                  </label>
-                )}
-                <button
-                  type="button"
-                  onClick={() => openDetail(c)}
-                  className="block w-full text-left focus:outline-none rounded-t-card overflow-hidden"
-                  aria-label={`View details for ${getDisplayLabel(c)}`}
-                >
-                  <div className="relative w-full aspect-[2.5/3.5] bg-stone-100 overflow-hidden">
-                    <SafeImage
-                      src={c.imageUrl}
-                      alt={getDisplayLabel(c)}
-                      fill
-                      className="object-cover object-top"
-                      sizes="50vw"
-                    />
-                  </div>
-                </button>
-                <div className="p-2">
-                  <p className="font-medium text-pokemon-dark text-xs line-clamp-2 leading-tight">
-                    {getDisplayLabel(c)}
-                  </p>
-                  <div className="flex flex-wrap gap-1 mt-0.5">
-                    {c.rarity && (
-                      <Badge variant={c.rarity}>{c.rarity}</Badge>
-                    )}
-                  </div>
-                  {c.marketPrice != null && (
-                    <p className="text-xs font-semibold text-pokemon-dark mt-1 tabular-nums">
-                      {formatPrice(c.marketPrice)}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </Card>
-          ))}
-        {viewMode === "card" && (
-          <div className="col-span-2 flex flex-col items-center gap-2 py-3">
-            <span className="text-sm text-stone-500">
-              {filtered.length} card{filtered.length !== 1 ? "s" : ""}
-            </span>
-            {totalPages > 1 && (
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                  className={pageBtn}
-                >
-                  Previous
-                </button>
-                <span className="text-sm text-stone-600 dark:text-stone-400">
-                  {currentPage} / {totalPages}
-                </span>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setCurrentPage((p) => Math.min(totalPages, p + 1))
-                  }
-                  disabled={currentPage === totalPages}
-                  className={pageBtn}
-                >
-                  Next
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
     </div>
   );
 }

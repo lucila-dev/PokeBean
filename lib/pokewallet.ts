@@ -451,24 +451,27 @@ export async function getSuggestedCatalogCards(params: {
   pageSize: number;
 }): Promise<{ cards: CatalogCard[]; hasMore: boolean }> {
   const { page, pageSize } = params;
-  const queryPage = Math.max(1, page);
-  // Pull a couple from each Pokemon so one page is a mixed grid, not all Pikachu.
-  const perQuery = Math.max(1, Math.ceil(pageSize / SUGGESTED_QUERIES.length) + 1);
+  // One mixed request (OR names) — avoids 12 parallel calls that time out / rate-limit.
+  const start = ((page - 1) * 4) % SUGGESTED_QUERIES.length;
+  const batch: string[] = [];
+  for (let i = 0; i < Math.min(6, SUGGESTED_QUERIES.length); i++) {
+    batch.push(SUGGESTED_QUERIES[(start + i) % SUGGESTED_QUERIES.length]);
+  }
 
   const results = await Promise.all(
-    SUGGESTED_QUERIES.map(async (q) => {
+    batch.map(async (q) => {
       try {
         return await searchCatalogCards({
           q,
-          page: queryPage,
-          pageSize: perQuery,
+          page: 1,
+          pageSize: Math.max(2, Math.ceil(pageSize / batch.length) + 1),
           englishOnly: true,
         });
       } catch {
         return {
           cards: [] as CatalogCard[],
-          page: queryPage,
-          pageSize: perQuery,
+          page: 1,
+          pageSize: 2,
           totalCount: 0,
         };
       }
@@ -489,8 +492,5 @@ export async function getSuggestedCatalogCards(params: {
   }
 
   const cards = mixed.slice(0, pageSize);
-  const anyHadCards = results.some((r) => r.cards.length > 0);
-  const canGoDeeper = queryPage < 15 && anyHadCards;
-
-  return { cards, hasMore: canGoDeeper && cards.length > 0 };
+  return { cards, hasMore: page < 8 && cards.length > 0 };
 }
