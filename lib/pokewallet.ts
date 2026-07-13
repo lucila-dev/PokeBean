@@ -7,23 +7,15 @@ import {
   parseYearFromText,
   stripTcgPrefix,
 } from "@/lib/cardFormat";
+import type { CatalogCard } from "@/lib/catalogTypes";
+import {
+  fetchPokemonTcgCardById,
+  searchPokemonTcgCards,
+} from "@/lib/pokemontcg";
+
+export type { CatalogCard } from "@/lib/catalogTypes";
 
 const POKEWALLET_BASE = "https://api.pokewallet.io";
-
-export type CatalogCard = {
-  id: string;
-  name: string;
-  displayName: string;
-  setName: string | null;
-  year: number | null;
-  rarity: string | null;
-  cardNumber: string | null;
-  imageUrl: string | null;
-  imageUrlLarge: string | null;
-  /** Direct CDN fallback when PokeWallet has no image (e.g. some JP sets). */
-  imageUrlExternal: string | null;
-  description: string | null;
-};
 
 type PokewalletCardInfo = {
   name?: string;
@@ -57,10 +49,7 @@ type PokewalletSearchResponse = {
 };
 
 function getApiKey(): string | undefined {
-  return (
-    process.env.POKEWALLET_API_KEY?.trim() ||
-    process.env.POKEMON_TCG_API_KEY?.trim()
-  );
+  return process.env.POKEWALLET_API_KEY?.trim();
 }
 
 type CachedImage = {
@@ -230,23 +219,35 @@ function preferEnglishResults(
 }
 
 export async function fetchCatalogCardById(id: string): Promise<CatalogCard | null> {
+  if (!id.startsWith("pk_")) {
+    return fetchPokemonTcgCardById(id);
+  }
+
   const apiKey = getApiKey();
-  if (!apiKey) return null;
+  if (!apiKey) {
+    return fetchPokemonTcgCardById(id);
+  }
 
-  const res = await fetch(`${POKEWALLET_BASE}/cards/${encodeURIComponent(id)}`, {
-    headers: {
-      Accept: "application/json",
-      "X-API-Key": apiKey,
-    },
-    next: { revalidate: 3600 },
-  });
+  try {
+    const res = await fetch(`${POKEWALLET_BASE}/cards/${encodeURIComponent(id)}`, {
+      headers: {
+        Accept: "application/json",
+        "X-API-Key": apiKey,
+      },
+      next: { revalidate: 3600 },
+    });
 
-  if (!res.ok) return null;
+    if (res.ok) {
+      const json = (await res.json()) as PokewalletSearchResult & { error?: string };
+      if (!json.error && json.id) {
+        return mapPokewalletCard(json.id, json.card_info ?? {}, json.tcgplayer?.url);
+      }
+    }
+  } catch {
+    // fall through to Pokemon TCG API
+  }
 
-  const json = (await res.json()) as PokewalletSearchResult & { error?: string };
-  if (json.error || !json.id) return null;
-
-  return mapPokewalletCard(json.id, json.card_info ?? {}, json.tcgplayer?.url);
+  return fetchPokemonTcgCardById(id);
 }
 
 export async function searchCatalogCards(params: {
@@ -265,13 +266,7 @@ export async function searchCatalogCards(params: {
     };
   }
 
-  const apiKey = getApiKey();
-  if (!apiKey) {
-    throw new Error("PokeWallet API key is not configured.");
-  }
-
   const preferEnglish = params.preferEnglish === true;
-  // Only slightly over-fetch so English filtering still works without burning quota.
   const fetchSize = preferEnglish
     ? Math.min(36, params.pageSize + 12)
     : params.pageSize;
@@ -286,6 +281,19 @@ export async function searchCatalogCards(params: {
     };
   }
 
+  const usePokemonTcgFallback = async () => {
+    const tcg = await searchPokemonTcgCards({
+      q,
+      page: params.page,
+      pageSize: params.pageSize,
+    });
+    searchCache.set(cacheKey, {
+      data: tcg,
+      expires: Date.now() + SEARCH_CACHE_TTL_MS,
+    });
+    return tcg;
+  };
+
   if (Date.now() < rateLimitedUntil) {
     const stale =
       getCachedSearch(cacheKey, true) ?? findStaleSearchForQuery(q, params.page);
@@ -296,7 +304,12 @@ export async function searchCatalogCards(params: {
         cards: stale.cards.slice(0, params.pageSize),
       };
     }
-    throw new Error("Catalog search is rate-limited. Try again in a moment.");
+    return usePokemonTcgFallback();
+  }
+
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    return usePokemonTcgFallback();
   }
 
   const url = new URL(`${POKEWALLET_BASE}/search`);
@@ -304,13 +317,18 @@ export async function searchCatalogCards(params: {
   url.searchParams.set("page", String(params.page));
   url.searchParams.set("limit", String(fetchSize));
 
-  const res = await fetch(url.toString(), {
-    headers: {
-      Accept: "application/json",
-      "X-API-Key": apiKey,
-    },
-    next: { revalidate: 1800 },
-  });
+  let res: Response;
+  try {
+    res = await fetch(url.toString(), {
+      headers: {
+        Accept: "application/json",
+        "X-API-Key": apiKey,
+      },
+      next: { revalidate: 1800 },
+    });
+  } catch {
+    return usePokemonTcgFallback();
+  }
 
   if (!res.ok) {
     if (res.status === 404) {
@@ -330,14 +348,14 @@ export async function searchCatalogCards(params: {
           cards: stale.cards.slice(0, params.pageSize),
         };
       }
-      throw new Error("Catalog search is rate-limited. Try again in a moment.");
+      return usePokemonTcgFallback();
     }
-    throw new Error("Could not load the card catalog. Please try again.");
+    return usePokemonTcgFallback();
   }
 
   const json = (await res.json()) as PokewalletSearchResponse;
   if (json.error) {
-    throw new Error(json.error);
+    return usePokemonTcgFallback();
   }
 
   const rawResults = json.results ?? [];
