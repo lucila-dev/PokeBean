@@ -36,7 +36,7 @@ export function CardDetailMetadata({ card, showAdded = false }: Props) {
     <>
       <div className="mb-4">
         <h3 className="text-xs font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-wide mb-1">
-          Description
+          Card text
         </h3>
         {description ? (
           <p className="text-stone-700 dark:text-stone-300 text-sm whitespace-pre-wrap leading-relaxed">

@@ -154,12 +154,51 @@ export function buildCardDescription(input: {
   return description || null;
 }
 
+export function sanitizeCardDescription(
+  description?: string | null,
+  setName?: string | null
+): string | null {
+  if (!description?.trim()) return null;
+  let d = description.trim();
+
+  // Drop descriptions that are really just a set label.
+  if (/^[A-Za-z0-9 &'’.:\-/]+(\s+set)?\.?$/i.test(d) && d.length < 48) {
+    if (/\bset\b/i.test(d) || (setName && d.toLowerCase().includes(setName.toLowerCase()))) {
+      return null;
+    }
+  }
+
+  // Remove lines that only restate the set.
+  const set = setName?.trim();
+  d = d
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .filter((line) => {
+      if (!line) return false;
+      if (/^(from\s+the\s+)?[a-z0-9 &'’.:\-/]+\s+set\.?$/i.test(line)) return false;
+      if (set && line.toLowerCase() === set.toLowerCase()) return false;
+      if (set && line.toLowerCase() === `${set.toLowerCase()} set`) return false;
+      return true;
+    })
+    .join("\n\n")
+    .trim();
+
+  return d || null;
+}
+
 export function normalizeCardFields<T extends CardFields>(card: T): T {
   const next = { ...card };
 
   if (next.setName?.trim()) {
     const set = stripTcgPrefix(next.setName.trim());
-    next.setName = set.toLowerCase() === "full set name" ? null : set;
+    // Theme-deck mascot alone is not a useful set name.
+    if (set.toLowerCase() === "full set name") {
+      next.setName = null;
+    } else if (/^(gyarados|raichu|charizard|pikachu|eevee)$/i.test(set)) {
+      next.setName = null;
+    } else {
+      next.setName = set;
+    }
   }
 
   next.name = extractCardName(next.name);
@@ -174,6 +213,8 @@ export function normalizeCardFields<T extends CardFields>(card: T): T {
   if (next.displayName?.trim()) {
     next.displayName = stripTcgPrefix(next.displayName.trim());
   }
+
+  next.description = sanitizeCardDescription(next.description, next.setName);
 
   if (next.description?.trim()) {
     const d = next.description.trim();
