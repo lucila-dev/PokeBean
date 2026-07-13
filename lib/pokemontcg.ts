@@ -7,6 +7,7 @@ import {
   normalizeRarity,
   parseYearFromText,
 } from "@/lib/cardFormat";
+import { filterAndRankCatalogCards, normalizeSearchText } from "@/lib/catalogSearch";
 
 const PTCG_BASE = "https://api.pokemontcg.io/v2";
 
@@ -83,6 +84,15 @@ function escapeTcgQueryTerm(term: string): string {
   return term.replace(/([+\-&|!(){}[\]^"~*?:\\/])/g, "\\$1");
 }
 
+function buildTcgNameQuery(q: string): string {
+  const tokens = normalizeSearchText(q)
+    .split(" ")
+    .filter((t) => t.length > 1 || /^[a-z0-9]$/i.test(t));
+  const terms = (tokens.length > 0 ? tokens : [normalizeSearchText(q)]).filter(Boolean);
+  // AND each token against the name field — avoids fuzzy set/product junk.
+  return terms.map((t) => `name:${escapeTcgQueryTerm(t)}`).join(" ");
+}
+
 export async function searchPokemonTcgCards(params: {
   q: string;
   page: number;
@@ -94,11 +104,11 @@ export async function searchPokemonTcgCards(params: {
   }
 
   const url = new URL(`${PTCG_BASE}/cards`);
-  // English sets by default; wildcard match on card name.
-  url.searchParams.set("q", `name:${escapeTcgQueryTerm(q)}*`);
+  url.searchParams.set("q", buildTcgNameQuery(q));
   url.searchParams.set("page", String(params.page));
-  url.searchParams.set("pageSize", String(params.pageSize));
-  url.searchParams.set("orderBy", "set.releaseDate,-number");
+  // Slightly over-fetch so post-filtering still fills the page.
+  url.searchParams.set("pageSize", String(Math.min(50, params.pageSize + 8)));
+  url.searchParams.set("orderBy", "name,set.releaseDate");
 
   const res = await fetch(url.toString(), {
     headers: getTcgHeaders(),
@@ -116,13 +126,14 @@ export async function searchPokemonTcgCards(params: {
   }
 
   const json = (await res.json()) as PokemonTcgSearchResponse;
-  const cards = (json.data ?? []).map(mapTcgCard);
+  const ranked = filterAndRankCatalogCards((json.data ?? []).map(mapTcgCard), q);
+  const cards = ranked.slice(0, params.pageSize);
 
   return {
     cards,
     page: json.page ?? params.page,
-    pageSize: json.pageSize ?? params.pageSize,
-    totalCount: json.totalCount ?? cards.length,
+    pageSize: params.pageSize,
+    totalCount: Math.max(cards.length, json.totalCount ?? ranked.length),
   };
 }
 

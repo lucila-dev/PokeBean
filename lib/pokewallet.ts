@@ -8,6 +8,7 @@ import {
   stripTcgPrefix,
 } from "@/lib/cardFormat";
 import type { CatalogCard } from "@/lib/catalogTypes";
+import { filterAndRankCatalogCards } from "@/lib/catalogSearch";
 import {
   fetchPokemonTcgCardById,
   searchPokemonTcgCards,
@@ -255,6 +256,8 @@ export async function searchCatalogCards(params: {
   page: number;
   pageSize: number;
   preferEnglish?: boolean;
+  /** Prefer Pokemon TCG name search (more accurate for typed queries). */
+  preferAccurateName?: boolean;
 }): Promise<{ cards: CatalogCard[]; page: number; pageSize: number; totalCount: number }> {
   const q = params.q.trim();
   if (!q) {
@@ -267,11 +270,12 @@ export async function searchCatalogCards(params: {
   }
 
   const preferEnglish = params.preferEnglish === true;
+  const preferAccurateName = params.preferAccurateName === true;
   const fetchSize = preferEnglish
     ? Math.min(36, params.pageSize + 12)
     : params.pageSize;
 
-  const cacheKey = `${q.toLowerCase()}|${params.page}|${fetchSize}|en=${preferEnglish ? 1 : 0}`;
+  const cacheKey = `${q.toLowerCase()}|${params.page}|${fetchSize}|en=${preferEnglish ? 1 : 0}|acc=${preferAccurateName ? 1 : 0}`;
   const cachedFresh = getCachedSearch(cacheKey, false);
   if (cachedFresh) {
     return {
@@ -281,7 +285,7 @@ export async function searchCatalogCards(params: {
     };
   }
 
-  const usePokemonTcgFallback = async () => {
+  const usePokemonTcg = async () => {
     const tcg = await searchPokemonTcgCards({
       q,
       page: params.page,
@@ -294,6 +298,15 @@ export async function searchCatalogCards(params: {
     return tcg;
   };
 
+  // Typed browse search: accurate name matching first.
+  if (preferAccurateName) {
+    try {
+      return await usePokemonTcg();
+    } catch {
+      // Fall through to PokeWallet, then filter by name.
+    }
+  }
+
   if (Date.now() < rateLimitedUntil) {
     const stale =
       getCachedSearch(cacheKey, true) ?? findStaleSearchForQuery(q, params.page);
@@ -304,12 +317,12 @@ export async function searchCatalogCards(params: {
         cards: stale.cards.slice(0, params.pageSize),
       };
     }
-    return usePokemonTcgFallback();
+    return usePokemonTcg();
   }
 
   const apiKey = getApiKey();
   if (!apiKey) {
-    return usePokemonTcgFallback();
+    return usePokemonTcg();
   }
 
   const url = new URL(`${POKEWALLET_BASE}/search`);
@@ -327,7 +340,7 @@ export async function searchCatalogCards(params: {
       next: { revalidate: 1800 },
     });
   } catch {
-    return usePokemonTcgFallback();
+    return usePokemonTcg();
   }
 
   if (!res.ok) {
@@ -348,20 +361,25 @@ export async function searchCatalogCards(params: {
           cards: stale.cards.slice(0, params.pageSize),
         };
       }
-      return usePokemonTcgFallback();
+      return usePokemonTcg();
     }
-    return usePokemonTcgFallback();
+    return usePokemonTcg();
   }
 
   const json = (await res.json()) as PokewalletSearchResponse;
   if (json.error) {
-    return usePokemonTcgFallback();
+    return usePokemonTcg();
   }
 
   const rawResults = json.results ?? [];
-  const ranked = preferEnglish ? preferEnglishResults(rawResults) : rawResults;
-  const mapped = ranked.map(mapApiCard);
+  const rankedRaw = preferEnglish ? preferEnglishResults(rawResults) : rawResults;
+  const mapped = filterAndRankCatalogCards(rankedRaw.map(mapApiCard), q);
   const pagination = json.pagination;
+
+  // If PokeWallet returned mostly unrelated fuzzy hits, use TCG instead.
+  if (preferAccurateName && mapped.length === 0) {
+    return usePokemonTcg();
+  }
 
   const fullResult = {
     cards: mapped,
@@ -446,6 +464,7 @@ export async function getSuggestedCatalogCards(params: {
     page: queryPage,
     pageSize,
     preferEnglish: true,
+    preferAccurateName: true,
   });
   const queryTotalPages = Math.max(1, Math.ceil(result.totalCount / pageSize));
   const moreInQuery = queryPage < queryTotalPages;
