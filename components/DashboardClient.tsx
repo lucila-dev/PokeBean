@@ -368,11 +368,11 @@ export function DashboardClient({
             </>
           )}
         </div>
-        <p className="text-sm font-medium text-stone-700 dark:text-stone-200 tabular-nums">
+        <p className="text-sm font-semibold text-pokemon-dark dark:text-stone-100 tabular-nums rounded-card border border-stone-200 dark:border-stone-700 bg-white/80 dark:bg-stone-900 px-3 py-2">
           {filtered.length} card{filtered.length !== 1 ? "s" : ""}
           {filtered.length !== initialCards.length
-            ? ` of ${initialCards.length}`
-            : ""}
+            ? ` (of ${initialCards.length})`
+            : " total"}
         </p>
       </div>
 
@@ -516,9 +516,7 @@ export function DashboardClient({
       {/* Card grid: 2 cols on phone, more on larger screens */}
       <div
         className={
-          viewMode === "card"
-            ? "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5"
-            : "hidden"
+          viewMode === "card" ? "collection-card-grid" : "hidden"
         }
       >
         {viewMode === "card" &&
