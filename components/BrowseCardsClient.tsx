@@ -107,28 +107,30 @@ function BrowseCardTile({
             )}
           </div>
         </button>
-        <div className="flex flex-1 flex-col p-3 gap-2">
+        <div className="flex flex-1 flex-col p-2 sm:p-3 gap-1.5 sm:gap-2">
           <button
             type="button"
             onClick={onOpen}
             className="text-left focus-ring rounded-button -m-1 p-1 flex-1"
           >
-            <p className="font-medium text-pokemon-dark dark:text-stone-100 text-sm line-clamp-2 leading-snug min-h-[2.5rem]">
+            <p className="font-medium text-pokemon-dark dark:text-stone-100 text-xs sm:text-sm line-clamp-2 leading-snug">
               {label}
             </p>
-            <div className="flex flex-wrap items-center gap-1.5 text-xs text-stone-600 dark:text-stone-400 mt-1 min-h-[1.25rem]">
-              {card.setName ? <span className="truncate">{card.setName}</span> : null}
+            <div className="flex flex-wrap items-center gap-1 text-xs text-stone-600 dark:text-stone-400 mt-1">
+              {card.setName ? (
+                <span className="truncate hidden sm:inline">{card.setName}</span>
+              ) : null}
               {card.rarity ? <Badge variant={card.rarity}>{card.rarity}</Badge> : null}
             </div>
           </button>
           <Button
             variant={owned ? "secondary" : "primary"}
-            className="w-full shrink-0 min-h-[44px] h-[44px] text-xs px-2"
+            className="w-full shrink-0 min-h-[36px] sm:min-h-[44px] h-9 sm:h-[44px] text-[11px] sm:text-xs px-1.5 sm:px-2"
             loading={isAdding}
             disabled={owned}
             onClick={onAdd}
           >
-            {owned ? "In collection" : "Add to collection"}
+            {owned ? "Owned" : "Add"}
           </Button>
         </div>
       </div>
@@ -434,17 +436,19 @@ export function BrowseCardsClient({ ownedCatalogCards: initialOwned }: Props) {
                 : "No cards match your search."}
         </p>
         {!search.trim() && (
-          <div className="mt-3 flex flex-wrap gap-2">
-            {SUGGESTED_QUERIES.map((query) => (
-              <button
-                key={query}
-                type="button"
-                onClick={() => setSearch(query)}
-                className="rounded-full border border-stone-300 dark:border-stone-600 bg-stone-50 dark:bg-stone-700/80 px-3 py-1.5 text-xs font-medium text-stone-700 dark:text-stone-200 capitalize hover:border-pokemon-yellow hover:bg-pokemon-yellow/10 hover:text-pokemon-dark dark:hover:text-pokemon-yellow focus-ring transition-colors"
-              >
-                {query}
-              </button>
-            ))}
+          <div className="mt-3 -mx-1 overflow-x-auto scrollbar-none">
+            <div className="flex gap-2 px-1 pb-0.5 w-max">
+              {SUGGESTED_QUERIES.map((query) => (
+                <button
+                  key={query}
+                  type="button"
+                  onClick={() => setSearch(query)}
+                  className="shrink-0 rounded-full border border-stone-300 dark:border-stone-600 bg-stone-50 dark:bg-stone-700/80 px-3 py-1.5 text-xs font-medium text-stone-700 dark:text-stone-200 capitalize hover:border-pokemon-yellow hover:bg-pokemon-yellow/10 hover:text-pokemon-dark dark:hover:text-pokemon-yellow focus-ring transition-colors"
+                >
+                  {query}
+                </button>
+              ))}
+            </div>
           </div>
         )}
       </Card>
@@ -479,13 +483,15 @@ export function BrowseCardsClient({ ownedCatalogCards: initialOwned }: Props) {
         </Card>
       ) : (
         cards.length > 0 && (
-          <div>
-            {showingSuggestions && (
-              <h2 className="font-display text-lg font-semibold text-pokemon-dark dark:text-stone-100 mb-4">
-                Suggested cards
-              </h2>
-            )}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 items-stretch">
+          <section aria-label="Browse cards">
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <p className="text-sm font-semibold text-pokemon-dark dark:text-stone-100 tabular-nums">
+                {showingSuggestions
+                  ? `${cards.length} suggested`
+                  : `${totalCount.toLocaleString()} result${totalCount !== 1 ? "s" : ""}`}
+              </p>
+            </div>
+            <div className="collection-card-grid !grid !grid-cols-2 md:!grid-cols-3 lg:!grid-cols-4 items-stretch">
               {cards.map((card) => (
                 <BrowseCardTile
                   key={card.id}
@@ -497,7 +503,7 @@ export function BrowseCardsClient({ ownedCatalogCards: initialOwned }: Props) {
                 />
               ))}
             </div>
-          </div>
+          </section>
         )
       )}
 
