@@ -44,13 +44,15 @@ const PAGE_SIZE = 12;
 const SUGGESTED_QUERIES = [
   "pikachu",
   "charizard",
+  "blastoise",
+  "venusaur",
   "eevee",
-  "mewtwo",
-  "umbreon",
-  "mew",
-  "lucario",
   "gengar",
+  "mewtwo",
+  "lucario",
   "snorlax",
+  "umbreon",
+  "gardevoir",
   "rayquaza",
 ];
 
@@ -426,7 +428,7 @@ export function BrowseCardsClient({ ownedCatalogCards: initialOwned }: Props) {
           {initialLoading
             ? "Loading…"
             : showingSuggestions
-              ? "Showing English TCG cards — scroll for more, or search by name."
+              ? "Mixed English picks — scroll for more, or search by name."
               : totalCount > 0
                 ? `${totalCount.toLocaleString()} English card${totalCount !== 1 ? "s" : ""} found`
                 : "No cards match your search."}

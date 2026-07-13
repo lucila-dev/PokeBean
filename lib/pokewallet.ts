@@ -434,13 +434,15 @@ export async function fetchCatalogImage(
 export const SUGGESTED_QUERIES = [
   "pikachu",
   "charizard",
+  "blastoise",
+  "venusaur",
   "eevee",
-  "mewtwo",
-  "umbreon",
-  "mew",
-  "lucario",
   "gengar",
+  "mewtwo",
+  "lucario",
   "snorlax",
+  "umbreon",
+  "gardevoir",
   "rayquaza",
 ];
 
@@ -449,24 +451,46 @@ export async function getSuggestedCatalogCards(params: {
   pageSize: number;
 }): Promise<{ cards: CatalogCard[]; hasMore: boolean }> {
   const { page, pageSize } = params;
-  const queryIndex = (page - 1) % SUGGESTED_QUERIES.length;
-  const queryPage = Math.floor((page - 1) / SUGGESTED_QUERIES.length) + 1;
-  const q = SUGGESTED_QUERIES[queryIndex];
+  const queryPage = Math.max(1, page);
+  // Pull a couple from each Pokemon so one page is a mixed grid, not all Pikachu.
+  const perQuery = Math.max(1, Math.ceil(pageSize / SUGGESTED_QUERIES.length) + 1);
 
-  const result = await searchCatalogCards({
-    q,
-    page: queryPage,
-    pageSize,
-    englishOnly: true,
-  });
-  const queryTotalPages = Math.max(1, Math.ceil(result.totalCount / pageSize));
-  const moreInQuery = queryPage < queryTotalPages;
-  const moreQueriesAhead = queryIndex < SUGGESTED_QUERIES.length - 1;
-  const canGoDeeper = queryPage < 20;
+  const results = await Promise.all(
+    SUGGESTED_QUERIES.map(async (q) => {
+      try {
+        return await searchCatalogCards({
+          q,
+          page: queryPage,
+          pageSize: perQuery,
+          englishOnly: true,
+        });
+      } catch {
+        return {
+          cards: [] as CatalogCard[],
+          page: queryPage,
+          pageSize: perQuery,
+          totalCount: 0,
+        };
+      }
+    })
+  );
 
-  const hasMore =
-    result.cards.length > 0 &&
-    (moreInQuery || moreQueriesAhead || (queryIndex === SUGGESTED_QUERIES.length - 1 && canGoDeeper));
+  const mixed: CatalogCard[] = [];
+  const seen = new Set<string>();
+  const maxLen = Math.max(0, ...results.map((r) => r.cards.length));
 
-  return { cards: result.cards, hasMore };
+  for (let i = 0; i < maxLen; i++) {
+    for (const result of results) {
+      const card = result.cards[i];
+      if (!card || seen.has(card.id)) continue;
+      seen.add(card.id);
+      mixed.push(card);
+    }
+  }
+
+  const cards = mixed.slice(0, pageSize);
+  const anyHadCards = results.some((r) => r.cards.length > 0);
+  const canGoDeeper = queryPage < 15 && anyHadCards;
+
+  return { cards, hasMore: canGoDeeper && cards.length > 0 };
 }
