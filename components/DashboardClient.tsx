@@ -177,204 +177,189 @@ export function DashboardClient({
 
   return (
     <div>
-      {/* Toolbar: search, view, filters */}
-      <Card className="mb-6 p-4 sm:p-5">
-        {/* Row 1: Search + View toggle */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
-          <div className="flex-1 min-w-0">
-            <label htmlFor="dashboard-search" className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">
+      {/* Compact tools — one block, not a separate “select section” */}
+      <Card className="mb-4 p-3 sm:p-5">
+        <div className="flex flex-wrap items-end gap-3 justify-between">
+          <div className="flex-1 min-w-[140px]">
+            <label htmlFor="dashboard-search" className="sr-only">
               Search
             </label>
             <input
               id="dashboard-search"
               type="search"
-              placeholder="Name, set, or description…"
+              placeholder="Search collection…"
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
                 setCurrentPage(1);
               }}
-              className={`${inputBase} w-full sm:max-w-sm`}
+              className={`${inputBase} w-full`}
               aria-label="Search cards"
             />
           </div>
-          <div className="sm:flex-shrink-0">
-            <span className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">
-              View
-            </span>
-            <div className="inline-flex h-[44px] items-center rounded-input border border-stone-300 dark:border-stone-600 bg-stone-50 dark:bg-stone-900 p-0.5">
-              <button
-                type="button"
-                onClick={() => setViewMode("list")}
-                aria-pressed={viewMode === "list"}
-                className={`rounded-lg px-4 h-full text-sm font-medium transition-colors focus-ring ${
-                  viewMode === "list"
-                    ? "bg-pokemon-blue text-white shadow-sm"
-                    : "text-stone-600 dark:text-stone-300 hover:bg-white dark:hover:bg-stone-800"
-                }`}
-              >
-                List
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode("card")}
-                aria-pressed={viewMode === "card"}
-                className={`rounded-lg px-4 h-full text-sm font-medium transition-colors focus-ring ${
-                  viewMode === "card"
-                    ? "bg-pokemon-blue text-white shadow-sm"
-                    : "text-stone-600 dark:text-stone-300 hover:bg-white dark:hover:bg-stone-800"
-                }`}
-              >
-                Card
-              </button>
-            </div>
+          <div className="inline-flex h-10 items-center rounded-input border border-stone-300 dark:border-stone-600 bg-stone-50 dark:bg-stone-900 p-0.5">
+            <button
+              type="button"
+              onClick={() => setViewMode("list")}
+              aria-pressed={viewMode === "list"}
+              className={`rounded-lg px-3 h-full text-sm font-medium transition-colors focus-ring ${
+                viewMode === "list"
+                  ? "bg-pokemon-blue text-white shadow-sm"
+                  : "text-stone-600 dark:text-stone-300"
+              }`}
+            >
+              List
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("card")}
+              aria-pressed={viewMode === "card"}
+              className={`rounded-lg px-3 h-full text-sm font-medium transition-colors focus-ring ${
+                viewMode === "card"
+                  ? "bg-pokemon-blue text-white shadow-sm"
+                  : "text-stone-600 dark:text-stone-300"
+              }`}
+            >
+              Cards
+            </button>
           </div>
         </div>
 
-        {/* Row 2: Filters */}
-        <div className="mt-5 pt-5 border-t border-stone-200">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:flex-wrap">
-            <div className="flex flex-wrap items-end gap-3 sm:gap-4">
-              <div>
-                <label htmlFor="filter-year" className="block text-sm font-medium text-stone-700 mb-1.5">
-                  Year
-                </label>
-                <select
-                  id="filter-year"
-                  value={yearFilter}
-                  onChange={(e) => {
-                    setYearFilter(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  className={`${inputBase} min-w-[100px] sm:min-w-[120px]`}
-                  aria-label="Filter by year"
-                >
-                  <option value="">All</option>
-                  {[...years].sort((a, b) => a - b).map((y) => (
-                    <option key={y} value={y}>{y}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label htmlFor="filter-set" className="block text-sm font-medium text-stone-700 mb-1.5">
-                  Set
-                </label>
-                <select
-                  id="filter-set"
-                  value={setFilter}
-                  onChange={(e) => {
-                    setSetFilter(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  className={`${inputBase} min-w-[140px] sm:min-w-[180px]`}
-                  aria-label="Filter by set"
-                >
-                  <option value="">All sets</option>
-                  {sets.map((s) => (
-                    <option key={s} value={s}>{s}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label htmlFor="filter-rarity" className="block text-sm font-medium text-stone-700 mb-1.5">
-                  Rarity
-                </label>
-                <select
-                  id="filter-rarity"
-                  value={rarityFilter}
-                  onChange={(e) => {
-                    setRarityFilter(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  className={`${inputBase} min-w-[120px] sm:min-w-[140px]`}
-                  aria-label="Filter by rarity"
-                >
-                  <option value="">All</option>
-                  {rarities.map((r) => (
-                    <option key={r} value={r}>{r}</option>
-                  ))}
-                </select>
-              </div>
+        <details className="mt-3 group">
+          <summary className="cursor-pointer text-sm font-medium text-stone-600 dark:text-stone-300 list-none flex items-center gap-1 focus-ring rounded-button py-1">
+            Filters
+            {hasActiveFilters ? (
+              <span className="text-pokemon-blue">· on</span>
+            ) : null}
+          </summary>
+          <div className="mt-3 flex flex-wrap items-end gap-3">
+            <div>
+              <label htmlFor="filter-year" className="block text-xs text-stone-500 mb-1">
+                Year
+              </label>
+              <select
+                id="filter-year"
+                value={yearFilter}
+                onChange={(e) => {
+                  setYearFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className={`${inputBase} min-w-[100px]`}
+              >
+                <option value="">All</option>
+                {[...years].sort((a, b) => a - b).map((y) => (
+                  <option key={y} value={y}>
+                    {y}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label htmlFor="filter-set" className="block text-xs text-stone-500 mb-1">
+                Set
+              </label>
+              <select
+                id="filter-set"
+                value={setFilter}
+                onChange={(e) => {
+                  setSetFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className={`${inputBase} min-w-[140px]`}
+              >
+                <option value="">All sets</option>
+                {sets.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label htmlFor="filter-rarity" className="block text-xs text-stone-500 mb-1">
+                Rarity
+              </label>
+              <select
+                id="filter-rarity"
+                value={rarityFilter}
+                onChange={(e) => {
+                  setRarityFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className={`${inputBase} min-w-[120px]`}
+              >
+                <option value="">All</option>
+                {rarities.map((r) => (
+                  <option key={r} value={r}>
+                    {r}
+                  </option>
+                ))}
+              </select>
             </div>
             {hasActiveFilters && (
               <button
                 type="button"
                 onClick={clearFilters}
-                className="text-sm font-medium text-pokemon-blue hover:underline focus-ring rounded-button py-2 px-1 min-h-[44px] flex items-center"
+                className="text-sm font-medium text-pokemon-blue hover:underline py-2"
               >
-                Clear filters
+                Clear
               </button>
             )}
           </div>
-        </div>
+        </details>
       </Card>
 
-      {/* Selection bar + collection total */}
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div className="w-fit flex flex-wrap items-center gap-3 rounded-card border border-stone-200 dark:border-stone-700 bg-stone-50/50 dark:bg-stone-900 px-4 py-3 transition-colors">
-          {!selectionMode ? (
-            <button
-              type="button"
-              onClick={() => setSelectionMode(true)}
-              className={toolbarBtn}
-            >
-              Select cards
-            </button>
-          ) : (
-            <>
+      {/* Single collection block: count + select live with the grid */}
+      <section aria-label="Collection">
+        <div className="mb-3 flex items-center justify-between gap-2 min-h-[40px]">
+          <p className="text-sm font-semibold text-pokemon-dark dark:text-stone-100 tabular-nums">
+            {filtered.length} card{filtered.length !== 1 ? "s" : ""}
+            {filtered.length !== initialCards.length
+              ? ` of ${initialCards.length}`
+              : ""}
+          </p>
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            {!selectionMode ? (
               <button
                 type="button"
-                onClick={() => {
-                  setSelectionMode(false);
-                  setSelectedIds(new Set());
-                }}
-                className={toolbarBtn}
+                onClick={() => setSelectionMode(true)}
+                className="text-sm font-medium text-pokemon-blue hover:underline focus-ring rounded-button px-1 py-1"
               >
-                Done
+                Select
               </button>
-              {paginated.length > 0 && (
+            ) : (
+              <>
                 <button
                   type="button"
                   onClick={toggleSelectAllOnPage}
-                  className={toolbarBtn}
+                  className="text-sm font-medium text-stone-600 dark:text-stone-300 hover:underline px-1 py-1"
                 >
-                  {allSelectedOnPage ? "Deselect page" : "Select all on page"}
+                  {allSelectedOnPage ? "Deselect all" : "Select all"}
                 </button>
-              )}
-              {someSelected && (
-                <>
-                  <span className="text-sm font-medium text-stone-700 dark:text-stone-200">
-                    {selectedIds.size} selected
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={deleteSelected}
-                      disabled={deleting}
-                      className={`${toolbarBtn} disabled:opacity-50 disabled:cursor-not-allowed`}
-                    >
-                      {deleting ? "Deleting…" : "Delete selected"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedIds(new Set())}
-                      className={toolbarBtn}
-                    >
-                      Clear selection
-                    </button>
-                  </div>
-                </>
-              )}
-            </>
-          )}
+                {someSelected && (
+                  <button
+                    type="button"
+                    onClick={deleteSelected}
+                    disabled={deleting}
+                    className="text-sm font-medium text-red-600 hover:underline disabled:opacity-50 px-1 py-1"
+                  >
+                    {deleting ? "Deleting…" : `Delete (${selectedIds.size})`}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectionMode(false);
+                    setSelectedIds(new Set());
+                  }}
+                  className="text-sm font-medium text-stone-700 dark:text-stone-200 hover:underline px-1 py-1"
+                >
+                  Done
+                </button>
+              </>
+            )}
+          </div>
         </div>
-        <p className="text-sm font-semibold text-pokemon-dark dark:text-stone-100 tabular-nums rounded-card border border-stone-200 dark:border-stone-700 bg-white/80 dark:bg-stone-900 px-3 py-2">
-          {filtered.length} card{filtered.length !== 1 ? "s" : ""}
-          {filtered.length !== initialCards.length
-            ? ` (of ${initialCards.length})`
-            : " total"}
-        </p>
-      </div>
 
       {/* Table (list view) */}
       <div className={viewMode === "list" ? "block" : "hidden"}>
@@ -516,7 +501,9 @@ export function DashboardClient({
       {/* Card grid: 2 cols on phone, more on larger screens */}
       <div
         className={
-          viewMode === "card" ? "collection-card-grid" : "hidden"
+          viewMode === "card"
+            ? "collection-card-grid !grid !grid-cols-2 md:!grid-cols-3 lg:!grid-cols-4"
+            : "hidden"
         }
       >
         {viewMode === "card" &&
@@ -611,6 +598,7 @@ export function DashboardClient({
           </div>
         )}
       </div>
+      </section>
 
       {/* Detail modal: full description and info when image is clicked */}
       {detailCard && (
