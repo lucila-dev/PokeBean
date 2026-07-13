@@ -288,7 +288,7 @@ export async function searchCatalogCards(params: {
     };
   }
 
-  const usePokemonTcg = async () => {
+  const fetchFromPokemonTcg = async () => {
     const tcg = await searchPokemonTcgCards({
       q,
       page: params.page,
@@ -303,7 +303,7 @@ export async function searchCatalogCards(params: {
 
   // English browse catalog: use Pokemon TCG API only (official EN printings).
   if (englishOnly) {
-    return usePokemonTcg();
+    return fetchFromPokemonTcg();
   }
 
   if (Date.now() < rateLimitedUntil) {
@@ -316,12 +316,12 @@ export async function searchCatalogCards(params: {
         cards: stale.cards.slice(0, params.pageSize),
       };
     }
-    return usePokemonTcg();
+    return fetchFromPokemonTcg();
   }
 
   const apiKey = getApiKey();
   if (!apiKey) {
-    return usePokemonTcg();
+    return fetchFromPokemonTcg();
   }
 
   const url = new URL(`${POKEWALLET_BASE}/search`);
@@ -339,7 +339,7 @@ export async function searchCatalogCards(params: {
       next: { revalidate: 1800 },
     });
   } catch {
-    return usePokemonTcg();
+    return fetchFromPokemonTcg();
   }
 
   if (!res.ok) {
@@ -360,14 +360,14 @@ export async function searchCatalogCards(params: {
           cards: stale.cards.slice(0, params.pageSize),
         };
       }
-      return usePokemonTcg();
+      return fetchFromPokemonTcg();
     }
-    return usePokemonTcg();
+    return fetchFromPokemonTcg();
   }
 
   const json = (await res.json()) as PokewalletSearchResponse;
   if (json.error) {
-    return usePokemonTcg();
+    return fetchFromPokemonTcg();
   }
 
   const rawResults = json.results ?? [];
