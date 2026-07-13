@@ -416,7 +416,7 @@ export function BrowseCardsClient({ ownedCatalogCards: initialOwned }: Props) {
         <input
           id="browse-search"
           type="search"
-          placeholder="Search by card name or set (e.g. Charizard, Base Set)…"
+          placeholder="Search English cards (e.g. Charizard, Pikachu)…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className={inputBase}
@@ -426,9 +426,9 @@ export function BrowseCardsClient({ ownedCatalogCards: initialOwned }: Props) {
           {initialLoading
             ? "Loading…"
             : showingSuggestions
-              ? "Scroll for more popular picks — or search for a specific card."
+              ? "Showing English TCG cards — scroll for more, or search by name."
               : totalCount > 0
-                ? `${totalCount.toLocaleString()} card${totalCount !== 1 ? "s" : ""} found`
+                ? `${totalCount.toLocaleString()} English card${totalCount !== 1 ? "s" : ""} found`
                 : "No cards match your search."}
         </p>
         {!search.trim() && (

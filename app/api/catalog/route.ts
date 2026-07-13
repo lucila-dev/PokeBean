@@ -34,8 +34,7 @@ export async function GET(request: NextRequest) {
       q,
       page,
       pageSize,
-      preferEnglish: true,
-      preferAccurateName: true,
+      englishOnly: true,
     });
     return NextResponse.json(result);
   } catch (err) {

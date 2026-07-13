@@ -258,6 +258,8 @@ export async function searchCatalogCards(params: {
   preferEnglish?: boolean;
   /** Prefer Pokemon TCG name search (more accurate for typed queries). */
   preferAccurateName?: boolean;
+  /** Browse English catalog only — skip PokeWallet (JP-heavy listings). */
+  englishOnly?: boolean;
 }): Promise<{ cards: CatalogCard[]; page: number; pageSize: number; totalCount: number }> {
   const q = params.q.trim();
   if (!q) {
@@ -271,11 +273,12 @@ export async function searchCatalogCards(params: {
 
   const preferEnglish = params.preferEnglish === true;
   const preferAccurateName = params.preferAccurateName === true;
+  const englishOnly = params.englishOnly === true || preferAccurateName;
   const fetchSize = preferEnglish
     ? Math.min(36, params.pageSize + 12)
     : params.pageSize;
 
-  const cacheKey = `${q.toLowerCase()}|${params.page}|${fetchSize}|en=${preferEnglish ? 1 : 0}|acc=${preferAccurateName ? 1 : 0}`;
+  const cacheKey = `${q.toLowerCase()}|${params.page}|${fetchSize}|en=${preferEnglish ? 1 : 0}|acc=${preferAccurateName ? 1 : 0}|eo=${englishOnly ? 1 : 0}`;
   const cachedFresh = getCachedSearch(cacheKey, false);
   if (cachedFresh) {
     return {
@@ -298,13 +301,9 @@ export async function searchCatalogCards(params: {
     return tcg;
   };
 
-  // Typed browse search: accurate name matching first.
-  if (preferAccurateName) {
-    try {
-      return await usePokemonTcg();
-    } catch {
-      // Fall through to PokeWallet, then filter by name.
-    }
+  // English browse catalog: use Pokemon TCG API only (official EN printings).
+  if (englishOnly) {
+    return usePokemonTcg();
   }
 
   if (Date.now() < rateLimitedUntil) {
@@ -375,11 +374,6 @@ export async function searchCatalogCards(params: {
   const rankedRaw = preferEnglish ? preferEnglishResults(rawResults) : rawResults;
   const mapped = filterAndRankCatalogCards(rankedRaw.map(mapApiCard), q);
   const pagination = json.pagination;
-
-  // If PokeWallet returned mostly unrelated fuzzy hits, use TCG instead.
-  if (preferAccurateName && mapped.length === 0) {
-    return usePokemonTcg();
-  }
 
   const fullResult = {
     cards: mapped,
@@ -463,8 +457,7 @@ export async function getSuggestedCatalogCards(params: {
     q,
     page: queryPage,
     pageSize,
-    preferEnglish: true,
-    preferAccurateName: true,
+    englishOnly: true,
   });
   const queryTotalPages = Math.max(1, Math.ceil(result.totalCount / pageSize));
   const moreInQuery = queryPage < queryTotalPages;

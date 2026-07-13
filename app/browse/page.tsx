@@ -39,7 +39,7 @@ export default async function BrowsePage() {
           Browse cards
         </h1>
         <p className="text-stone-600 dark:text-stone-400 mt-1">
-          Search the PokeWallet catalog and add cards to your collection without scanning a photo.
+          Browse English Pokemon TCG cards and add them to your collection without scanning a photo.
         </p>
       </div>
       <BrowseCardsClient ownedCatalogCards={ownedCatalogCards} />
