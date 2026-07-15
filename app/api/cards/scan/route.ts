@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
+import { getAuthUser } from "@/lib/request-auth";
 import { extractCardFromImage } from "@/lib/openai";
 import { prisma } from "@/lib/db";
-import { authOptions } from "@/lib/auth";
 import { saveUploadedImage } from "@/lib/saveUpload";
 
 const MAX_SIZE = 5 * 1024 * 1024; // 5MB
@@ -16,13 +15,13 @@ function getExtension(mime: string): string {
 }
 
 export async function POST(request: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
+  const user = await getAuthUser(request);
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
-    const formData = await request.formData();
+    const formData = (await request.formData()) as unknown as globalThis.FormData;
     const file = formData.get("image") as File | null;
     if (!file) {
       return NextResponse.json(
@@ -50,7 +49,7 @@ export async function POST(request: NextRequest) {
 
     const card = await prisma.card.create({
       data: {
-        userId: session.user.id,
+        userId: user.id,
         name: extracted.name,
         displayName: extracted.displayName ?? null,
         description: extracted.description ?? null,

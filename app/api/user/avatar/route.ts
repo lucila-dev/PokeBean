@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
+import { getAuthUser } from "@/lib/request-auth";
 import { prisma } from "@/lib/db";
-import { authOptions } from "@/lib/auth";
 import { saveUploadedImage } from "@/lib/saveUpload";
 
 const MAX_SIZE = 5 * 1024 * 1024; // 5MB
@@ -15,13 +14,13 @@ function getExtension(mime: string): string {
 }
 
 export async function POST(request: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
+  const user = await getAuthUser(request);
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
-    const formData = await request.formData();
+    const formData = (await request.formData()) as unknown as globalThis.FormData;
     const file = formData.get("image") as File | null;
     if (!file) {
       return NextResponse.json(
@@ -47,11 +46,11 @@ export async function POST(request: NextRequest) {
     const imageUrl = await saveUploadedImage({
       buffer,
       mimeType: file.type === "image/jpg" ? "image/jpeg" : file.type,
-      relativePath: `uploads/avatars/${session.user.id}${ext}`,
+      relativePath: `uploads/avatars/${user.id}${ext}`,
     });
 
     await prisma.user.update({
-      where: { id: session.user.id },
+      where: { id: user.id },
       data: { image: imageUrl },
     });
 

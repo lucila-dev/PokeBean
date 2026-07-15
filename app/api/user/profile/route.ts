@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
+import { getAuthUser } from "@/lib/request-auth";
 import { prisma } from "@/lib/db";
-import { authOptions } from "@/lib/auth";
 
 export async function PATCH(request: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
+  const authUser = await getAuthUser(request);
+  if (!authUser) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -24,16 +23,16 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    const user = await prisma.user.update({
-      where: { id: session.user.id },
+    const updated = await prisma.user.update({
+      where: { id: authUser.id },
       data: { name },
       select: { id: true, email: true, name: true },
     });
 
     return NextResponse.json({
-      id: user.id,
-      email: user.email,
-      name: user.name,
+      id: updated.id,
+      email: updated.email,
+      name: updated.name,
     });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Update failed";

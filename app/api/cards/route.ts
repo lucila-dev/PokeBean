@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
+import { getAuthUser } from "@/lib/request-auth";
 import { prisma } from "@/lib/db";
-import { authOptions } from "@/lib/auth";
 import { fetchCatalogCardById } from "@/lib/pokewallet";
 import { normalizeCardFields } from "@/lib/cardFormat";
 
 export async function GET(request: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
+  const user = await getAuthUser(request);
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -17,7 +16,7 @@ export async function GET(request: NextRequest) {
   const rarity = searchParams.get("rarity");
 
   const where: { userId: string; year?: number; setName?: string; rarity?: string } = {
-    userId: session.user.id,
+    userId: user.id,
   };
   if (year) {
     const y = parseInt(year, 10);
@@ -47,8 +46,8 @@ type CatalogAddBody = {
 };
 
 export async function POST(request: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
+  const user = await getAuthUser(request);
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -65,7 +64,7 @@ export async function POST(request: NextRequest) {
     }
 
     const existing = await prisma.card.findFirst({
-      where: { userId: session.user.id, catalogId },
+      where: { userId: user.id, catalogId },
     });
     if (existing) {
       return NextResponse.json(
@@ -88,7 +87,7 @@ export async function POST(request: NextRequest) {
 
     const card = await prisma.card.create({
       data: {
-        userId: session.user.id,
+        userId: user.id,
         catalogId,
         source: "catalog",
         name: normalized.name,

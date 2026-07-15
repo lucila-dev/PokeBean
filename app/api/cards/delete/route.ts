@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { unlink } from "fs/promises";
 import path from "path";
-import { getServerSession } from "next-auth";
+import { getAuthUser } from "@/lib/request-auth";
 import { prisma } from "@/lib/db";
-import { authOptions } from "@/lib/auth";
 
 export async function DELETE(request: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
+  const user = await getAuthUser(request);
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -22,7 +21,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     const cards = await prisma.card.findMany({
-      where: { id: { in: ids }, userId: session.user.id },
+      where: { id: { in: ids }, userId: user.id },
       select: { id: true, imageUrl: true },
     });
 
@@ -39,7 +38,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     await prisma.card.deleteMany({
-      where: { id: { in: ids }, userId: session.user.id },
+      where: { id: { in: ids }, userId: user.id },
     });
 
     return NextResponse.json({ deleted: cards.length });

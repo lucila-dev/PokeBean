@@ -39,3 +39,10 @@ tsconfig.tsbuildinfo
 # uploaded card images (remove this line if you want to commit them)
 /public/uploads/*
 !/public/uploads/.gitkeep
+
+# expo / mobile
+/mobile/node_modules
+/mobile/.expo
+/mobile/dist
+/mobile/.env
+/mobile/.env*.local
