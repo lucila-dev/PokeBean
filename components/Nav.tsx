@@ -29,6 +29,20 @@ function MoonIcon() {
     </svg>
   );
 }
+function MenuIcon() {
+  return (
+    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+    </svg>
+  );
+}
+function CloseIcon() {
+  return (
+    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+    </svg>
+  );
+}
 
 const linkClass = (active: boolean) =>
   `inline-flex h-9 items-center justify-center rounded-button px-3 text-sm font-medium whitespace-nowrap transition-colors focus-ring ${
@@ -37,11 +51,19 @@ const linkClass = (active: boolean) =>
       : "text-stone-200 hover:text-pokemon-yellow hover:bg-white/5"
   }`;
 
+const mobileLinkClass = (active: boolean) =>
+  `flex h-11 items-center rounded-button px-3 text-base font-medium transition-colors focus-ring ${
+    active
+      ? "bg-pokemon-yellow/20 text-pokemon-yellow font-semibold"
+      : "text-stone-100 hover:text-pokemon-yellow hover:bg-white/5"
+  }`;
+
 export function Nav() {
   const pathname = usePathname();
   const { data: session, status } = useSession();
   const { theme, setTheme } = useTheme();
   const [loadingTimedOut, setLoadingTimedOut] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     if (status !== "loading") {
@@ -52,8 +74,32 @@ export function Nav() {
     return () => clearTimeout(timer);
   }, [status]);
 
+  // Close the mobile menu whenever the route changes.
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [pathname]);
+
   const showLoading = status === "loading" && !loadingTimedOut;
   const isLoggedIn = status === "authenticated" && Boolean(session);
+
+  const avatar =
+    session?.user?.image ? (
+      <span className="relative h-7 w-7 shrink-0 overflow-hidden rounded-full border border-stone-500">
+        <SafeImage
+          src={session.user.image}
+          alt=""
+          width={28}
+          height={28}
+          className="h-full w-full object-cover"
+          placeholderClassName="flex h-7 w-7 items-center justify-center rounded-full bg-stone-600 text-sm font-semibold text-pokemon-yellow"
+          placeholderText={(session.user?.name || session.user?.email || "?").slice(0, 1).toUpperCase()}
+        />
+      </span>
+    ) : (
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-stone-600 text-sm font-semibold text-pokemon-yellow">
+        {(session?.user?.name || session?.user?.email || "?").slice(0, 1).toUpperCase()}
+      </span>
+    );
 
   return (
     <nav
@@ -73,77 +119,86 @@ export function Nav() {
         {showLoading ? (
           <span className="text-sm text-stone-400">Loading…</span>
         ) : isLoggedIn ? (
-          <div className="flex min-w-0 items-center gap-1 sm:gap-2">
-            <ul className="flex items-center gap-0.5 sm:gap-1">
-              {protectedLinks.map(({ href, label }) => {
-                const isActive = pathname.startsWith(href);
-                return (
-                  <li key={href}>
-                    <Link
-                      href={href}
-                      aria-current={isActive ? "page" : undefined}
-                      className={linkClass(isActive)}
-                    >
-                      {label}
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
+          <>
+            {/* Desktop / tablet: inline links */}
+            <div className="hidden min-w-0 items-center gap-1 md:flex md:gap-2">
+              <ul className="flex items-center gap-0.5 md:gap-1">
+                {protectedLinks.map(({ href, label }) => {
+                  const isActive = pathname.startsWith(href);
+                  return (
+                    <li key={href}>
+                      <Link
+                        href={href}
+                        aria-current={isActive ? "page" : undefined}
+                        className={linkClass(isActive)}
+                      >
+                        {label}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
 
-            <div className="ml-1 flex items-center gap-0.5 border-l border-stone-600 pl-2 sm:ml-2 sm:gap-1 sm:pl-3">
+              <div className="ml-1 flex items-center gap-0.5 border-l border-stone-600 pl-2 md:ml-2 md:gap-1 md:pl-3">
+                <button
+                  type="button"
+                  onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-button text-stone-200 hover:bg-white/5 hover:text-pokemon-yellow focus-ring"
+                  title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+                  aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+                >
+                  {theme === "dark" ? <SunIcon /> : <MoonIcon />}
+                </button>
+                <Link
+                  href="/profile"
+                  aria-current={pathname === "/profile" ? "page" : undefined}
+                  className={`inline-flex h-9 items-center gap-2 rounded-button px-1.5 focus-ring ${
+                    pathname === "/profile"
+                      ? "bg-pokemon-yellow/20 text-pokemon-yellow font-semibold"
+                      : "text-stone-200 hover:bg-white/5 hover:text-pokemon-yellow"
+                  }`}
+                  title="Profile"
+                >
+                  {avatar}
+                  <span
+                    className="hidden max-w-[100px] truncate text-sm lg:inline"
+                    title={session?.user?.email ?? undefined}
+                  >
+                    {session?.user?.name || session?.user?.email}
+                  </span>
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => signOut({ callbackUrl: "/" })}
+                  className="inline-flex h-9 items-center justify-center rounded-button px-2 text-sm font-medium text-stone-200 hover:bg-white/5 hover:text-pokemon-yellow focus-ring whitespace-nowrap"
+                >
+                  Log out
+                </button>
+              </div>
+            </div>
+
+            {/* Mobile: theme toggle + hamburger */}
+            <div className="flex items-center gap-1 md:hidden">
               <button
                 type="button"
                 onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
                 className="inline-flex h-9 w-9 items-center justify-center rounded-button text-stone-200 hover:bg-white/5 hover:text-pokemon-yellow focus-ring"
-                title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
                 aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
               >
                 {theme === "dark" ? <SunIcon /> : <MoonIcon />}
               </button>
-              <Link
-                href="/profile"
-                aria-current={pathname === "/profile" ? "page" : undefined}
-                className={`inline-flex h-9 items-center gap-2 rounded-button px-1.5 focus-ring ${
-                  pathname === "/profile"
-                    ? "bg-pokemon-yellow/20 text-pokemon-yellow font-semibold"
-                    : "text-stone-200 hover:bg-white/5 hover:text-pokemon-yellow"
-                }`}
-                title="Profile"
-              >
-                {session.user?.image ? (
-                  <span className="relative h-7 w-7 shrink-0 overflow-hidden rounded-full border border-stone-500">
-                    <SafeImage
-                      src={session.user.image}
-                      alt=""
-                      width={28}
-                      height={28}
-                      className="h-full w-full object-cover"
-                      placeholderClassName="flex h-7 w-7 items-center justify-center rounded-full bg-stone-600 text-sm font-semibold text-pokemon-yellow"
-                      placeholderText={(session.user?.name || session.user?.email || "?").slice(0, 1).toUpperCase()}
-                    />
-                  </span>
-                ) : (
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-stone-600 text-sm font-semibold text-pokemon-yellow">
-                    {(session.user?.name || session.user?.email || "?").slice(0, 1).toUpperCase()}
-                  </span>
-                )}
-                <span
-                  className="hidden max-w-[100px] truncate text-sm lg:inline"
-                  title={session.user?.email ?? undefined}
-                >
-                  {session.user?.name || session.user?.email}
-                </span>
-              </Link>
               <button
                 type="button"
-                onClick={() => signOut({ callbackUrl: "/" })}
-                className="inline-flex h-9 items-center justify-center rounded-button px-2 text-sm font-medium text-stone-200 hover:bg-white/5 hover:text-pokemon-yellow focus-ring whitespace-nowrap"
+                onClick={() => setMenuOpen((v) => !v)}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-button text-stone-100 hover:bg-white/5 hover:text-pokemon-yellow focus-ring"
+                aria-label={menuOpen ? "Close menu" : "Open menu"}
+                aria-expanded={menuOpen}
+                aria-controls="mobile-menu"
               >
-                Log out
+                {menuOpen ? <CloseIcon /> : <MenuIcon />}
               </button>
             </div>
-          </div>
+          </>
         ) : (
           <ul className="flex items-center gap-1">
             <li>
@@ -167,6 +222,55 @@ export function Nav() {
           </ul>
         )}
       </div>
+
+      {/* Mobile dropdown panel */}
+      {isLoggedIn && menuOpen && (
+        <div
+          id="mobile-menu"
+          className="border-t border-pokemon-dark-muted px-4 pb-4 pt-2 md:hidden"
+        >
+          <ul className="flex flex-col gap-1">
+            {protectedLinks.map(({ href, label }) => {
+              const isActive = pathname.startsWith(href);
+              return (
+                <li key={href}>
+                  <Link
+                    href={href}
+                    aria-current={isActive ? "page" : undefined}
+                    className={mobileLinkClass(isActive)}
+                  >
+                    {label}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+
+          <div className="mt-2 flex items-center justify-between border-t border-stone-700 pt-3">
+            <Link
+              href="/profile"
+              aria-current={pathname === "/profile" ? "page" : undefined}
+              className={`flex min-w-0 items-center gap-2 rounded-button px-2 py-1.5 focus-ring ${
+                pathname === "/profile"
+                  ? "bg-pokemon-yellow/20 text-pokemon-yellow font-semibold"
+                  : "text-stone-100 hover:bg-white/5 hover:text-pokemon-yellow"
+              }`}
+            >
+              {avatar}
+              <span className="max-w-[150px] truncate text-sm">
+                {session?.user?.name || session?.user?.email}
+              </span>
+            </Link>
+            <button
+              type="button"
+              onClick={() => signOut({ callbackUrl: "/" })}
+              className="inline-flex h-9 items-center justify-center rounded-button px-3 text-sm font-medium text-stone-200 hover:bg-white/5 hover:text-pokemon-yellow focus-ring whitespace-nowrap"
+            >
+              Log out
+            </button>
+          </div>
+        </div>
+      )}
     </nav>
   );
 }
